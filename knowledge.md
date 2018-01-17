@@ -13,12 +13,12 @@ Our [**Tutorials**](https://hyperledger.github.io/composer/tutorials/tutorials.h
 
 | [**ACLs**](#acls) | [**Authorization Errors**](#authorization) | [**Blockchain Recap**](#recap)   | [**Business Network Cards**](#bizcards) 
 | :---------------------- | :-----------------------| :----------------------- | :-------------------- 
-| [**Client APIs Usage**](#clientapis) | [**Composer Install Issues**](#installissues) | [**Debugging**](#debug)  | [**Endorsement Policy**](#endorse) 
-| [**Events**](#events) | [**Event Hub Problems**](#eventhub) | [**Filters**](#filters)  | [**Historian**](#historian) 
-| [**Cloud/Kubernetes envs**](#varcloud)  | [**Modeling**](#model) | [**Miscellaneous Items**](#misccomposer) | [**Multi Org Setup/BYFN**](#multiorg) | [**Passport Strategies**](#passport-strategy) 
-| [**Queries**](#queries)  | [**REST APIs**](#restapis)  | [**REST Authentication**](#restauth)  | [**Runtime Install Errors**](#runtime-install)
-| [**Sample Networks**](#samples) | [**Transaction Processors**](#transproc) | [**Upgrading Composer Runtime**](#upgrade) | [**Updating Biz Networks**](#upgradebn)  
-| [**Topic Name**](#samples)  | [**Topic Name**](#bizcards) 
+| [**Client APIs Usage**](#clientapis) | [**Cloud/Kubernetes envs**](#varcloud) | [**Composer Install Issues**](#installissues) | [**Debugging**](#debug)  
+| [**Endorsement Policy**](#endorse) | [**Events**](#events) | [**Event Hub Problems**](#eventhub) | [**Filters**](#filters)  |
+| [**Identity Issues**](#identity) | [**Historian**](#historian) | [**Modeling**](#model) | [**Miscellaneous Items**](#misccomposer) 
+| [**Multi Org Setup/BYFN**](#multiorg) | [**Passport Strategies**](#passport-strategy) | [**Queries**](#queries)  | [**REST APIs**](#restapis)  
+| [**REST Authentication**](#restauth)  | [**Runtime Install Errors**](#runtime-install)| [**Sample Networks**](#samples) | [**Transaction Processors**](#transproc) 
+| [**Upgrading Composer Runtime**](#upgrade) | [**Updating Biz Networks**](#upgradebn) | [**Topic Name**](#samples)  | [**Topic Name**](#bizcards) 
 
 
 Have Fabric Related issues? (ie when used with Composer Dev Env Setup or Tutorials)
@@ -214,6 +214,21 @@ Below are some generic or specific questions on using client-side JS APIs
 #### :card_index: [back to base camp :camping: ](#top)  
 
 
+<a name="varcloud"></a>
+
+
+### :information_source:  Cloud Issues eg. providers like IBM/Azure Cloud / Kubernetes Support / Cloud hosted Container service
+
+Please seek support through the official channels for the Provider hosting your Hyperledger Fabric/Composer environment. (Composer cannot provide assistance with 3rd party Cloud environments per se, as support in this knowledge base is provided for local Development or local DevTest environments) - see link below for more info
+
+| Message encountered | Resolution 
+| :---------------------- | :-----------------------
+| IBM Sandbox / Kubernetes support  |for support with your particular environment on IBM Cloud you should go to this page https://console.bluemix.net/docs/support/index.html#contacting-support
+| Microsoft Azure | See [Microsoft support](https://support.microsoft.com/en-us) or [here](https://social.msdn.microsoft.com/Forums/en-US/home?forum=azureblockchain) for more information.
+
+
+#### :card_index: [back to base camp :camping: ](#top)  
+
 
 <a name="installissues"></a>
 
@@ -364,17 +379,20 @@ Some typical examples of historian queries asked are below (obviously you would 
 
 #### :card_index: [back to base camp :camping: ](#top)  
 
-<a name="varcloud"></a>
+
+<a name="identity"></a>
 
 
-### :information_source:  Cloud Issues eg. providers like IBM/Azure Cloud / Kubernetes Support / Cloud hosted Container service
 
-Please seek support through the official channels for the Provider hosting your Hyperledger Fabric/Composer environment. (Composer cannot provide assistance with 3rd party Cloud environments per se, as support in this knowledge base is provided for local Development or local DevTest environments) - see link below for more info
+### :information_source:  Composer Identity related issues ('issue', 'request', 'register' etc in Dev/Multi-Org setup
+
+The following are a selection of answers, to help understand what you may be encountering. Check also [**Review card errors / resolutions**](#cardfaq) for identity issues relating to Business Network cards (part of which has identity metadata).
+
 
 | Message encountered | Resolution 
 | :---------------------- | :-----------------------
-| IBM Sandbox / Kubernetes support  |for support with your particular environment on IBM Cloud you should go to this page https://console.bluemix.net/docs/support/index.html#contacting-support
-| Microsoft Azure | See [Microsoft support](https://support.microsoft.com/en-us) or [here](https://social.msdn.microsoft.com/Forums/en-US/home?forum=azureblockchain) for more information.
+|Identity request failure - SSL | Running `composer identity request -c PeerAdmin@byfn-network-org1-only -u admin -s adminpw -d alice`
+with error `Error: failed to request identity. Error trying to enroll user and return certificates. Error: Calling enrollment endpoint failed with error [Error: write EPROTO 140337610980224:error:1411713E:SSL routines:ssl_check_srvr_ecc_cert_and_alg:ecc cert not for signing:../deps/openssl/openssl/ssl/ssl_lib.c:2520: 140337610980224:error:14082130:SSL routines:ssl3_check_cert_and_algorithm:bad ecc cert:../deps/openssl/openssl/ssl/s3_clnt.c:3550:]`
 
 
 #### :card_index: [back to base camp :camping: ](#top)  

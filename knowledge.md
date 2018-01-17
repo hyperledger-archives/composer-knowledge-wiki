@@ -217,7 +217,7 @@ Below are some generic or specific questions on using client-side JS APIs
 <a name="varcloud"></a>
 
 
-### :information_source:  Cloud Issues eg. providers like IBM/Azure Cloud / Kubernetes Support / Cloud hosted Container service
+### :information_source:  Cloud Issues (eg. providers like IBM/Azure Cloud / Kubernetes Support / Cloud hosted Container service)
 
 Please seek support through the official channels for the Provider hosting your Hyperledger Fabric/Composer environment. (Composer cannot provide assistance with 3rd party Cloud environments per se, as support in this knowledge base is provided for local Development or local DevTest environments) - see link below for more info
 
@@ -384,15 +384,14 @@ Some typical examples of historian queries asked are below (obviously you would 
 
 
 
-### :information_source:  Composer Identity related issues ('issue', 'request', 'register' etc in Dev/Multi-Org setup
+### :information_source:  Composer Identity related issues ('issue', 'request', 'register' etc in Dev/Multi-Org setup)
 
 The following are a selection of answers, to help understand what you may be encountering. Check also [**Review card errors / resolutions**](#cardfaq) for identity issues relating to Business Network cards (part of which has identity metadata).
 
 
 | Message encountered | Resolution 
 | :---------------------- | :-----------------------
-|Identity request failure - SSL | Running `composer identity request -c PeerAdmin@byfn-network-org1-only -u admin -s adminpw -d alice`
-with error `Error: failed to request identity. Error trying to enroll user and return certificates. Error: Calling enrollment endpoint failed with error [Error: write EPROTO 140337610980224:error:1411713E:SSL routines:ssl_check_srvr_ecc_cert_and_alg:ecc cert not for signing:../deps/openssl/openssl/ssl/ssl_lib.c:2520: 140337610980224:error:14082130:SSL routines:ssl3_check_cert_and_algorithm:bad ecc cert:../deps/openssl/openssl/ssl/s3_clnt.c:3550:]`
+|Identity request failure - SSL | Running `composer identity request -c PeerAdmin@byfn-network-org1-only -u admin -s adminpw -d alice` with error Error: failed to request identity. Error trying to enroll user and return certificates. Error: Calling enrollment endpoint failed with error [Error: write EPROTO 140337610980224:error:1411713E:SSL routines:ssl_check_srvr_ecc_cert_and_alg:ecc cert not for signing:../deps/openssl/openssl/ssl/ssl_lib.c:2520: 140337610980224:error:14082130:SSL routines:ssl3_check_cert_and_algorithm:bad ecc cert:../deps/openssl/openssl/ssl/s3_clnt.c:3550:]
 
 
 #### :card_index: [back to base camp :camping: ](#top)  

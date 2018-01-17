@@ -181,17 +181,18 @@ The Network Admin card is a card, once imported, that provides access to the dep
 | Cannot access local Fabric from dockerised REST server or Node js App | The simplest approach to sharing a card inside and outside a container is to replace the 'localhost' with the IP Number of your docker host in the connection.json file of the card you are using. See  https://stackoverflow.com/questions/47804516/hyperledger-composer-cannot-connect-with-dockerized-node-js-app/47818372 
 | Authorization errors Playground local | See **answer** at https://stackoverflow.com/questions/47617442/authorization-failure-when-creating-new-business-network-in-local-playground
 | Can't export BN card  in Playground | you're using the 'in-browser' connector (not connected to a running Fabric) - you can only export cards for a runtime Fabric environment
-| |  
-  
+| How to export card from Playground | After issuing the identity/participant,add to wallet - then connect to the business network via 'Use Now' in ID registry. Return to 'My business networks' then click on the 'export' icon alongside the card you wish to export (from the list of BN card modals displayed). 
 
 <a name="cardapis"></a>
+
+
 ### Card API errors / Resolutions
 
 | Message/Issue encountered | Resolution 
 | :---------------------- | :-----------------------
-| How to export from Playground | After issuing the identity/participant, connect to the business network, return to 'My business networks' then click the 'export' icon alongside the card you wish to export (from the list of cards).
 | How to switch BN cards using JS APIs | `const BusinessNetworkConnection = require('composer-client').BusinessNetworkConnection;  let businessNetworkConnection = new BusinessNetworkConnection();   return businessNetworkConnection.connect('lenny@digitalPropertyNetwork')  .then(() => { .........blah blah do something ; } return businessNetworkConnection.disconnect(); <switch to next card>` See also example of `useIdentity` here -> https://github.com/hyperledger/composer-sample-networks/blob/master/packages/pii-network/test/pii.js#L168
 | Issue Identity and use Card | Issue identity, import card, connect to the business network using the card `businessNetworkConnection.issueIdentity(NS + '#' + userData.id, userData.user); ....  var userCard = new IdCard({...});  userCard.setCredentials(credentials); ...  adminConnection.importCard(userCardName, userCard); .... .then(() => {     // Connect to the business network using the network admin identity ...     businessNetworkConnection = new BusinessNetworkConnection({ cardStore: cardStore });   businessNetworkConnection.connect(userCardName); } ...`
+|Issue Identity and switch between issued cards | see https://github.com/hyperledger/composer-sample-networks/blob/master/packages/pii-network/test/pii.js#L139 onwards (from the PII sample networks) - the principle of connecting to the network with the card ycreated and being persisted to a File CardStore (as opposed to the in Memory CardStore example used in this test script) is the same.
 
 
 #### :card_index: [back to base camp :camping: ](#top)   

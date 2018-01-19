@@ -284,6 +284,8 @@ More info on troubleshooting or understanding issues related to endorsement of t
 
 | Message encountered | Resolution 
 | :---------------------- | :-----------------------
+| Can I emit events and catch (err) using JS ? | Check this : https://hyperledger.github.io/composer/reference/js_scripts.html, section "Error handling in transaction processor functions" ```return function()     .then(function(){})      .catch(function(err){          emit(someevent);          throw err;       }) ```
+| (continued ...) | While you can issue an 'emit' at any point in your transaction logic, that event will not actually be emitted until the transaction is committed.  However, throwing the error makes the transaction roll back - changes made by transactions are atomic, either the transaction is successful and all changes are applied, or the transaction fails and no changes are applied.
 |How do i retrieve events, using a query? | Events are emitted by Txn Processors and 'subscribed to' by applications - you cannot query them using Composer Queries as they are not 'resources' per se - you will get an error eg.  `Error: The query compiler does not support resources of this type`
 
 

@@ -382,12 +382,15 @@ Some typical examples of historian queries asked are below (obviously you would 
 
 #### :card_index: [back to base camp :camping: ](#top)  
 
+| Message Encountered / Question  | Answer/Resolution
+| :---------------------- | :-----------------------
+| Does Historian prevent 'false' / wrong transactions? | Historian records what was consensually agreed as the 'truth' - the whole point of the blockchain is to detect the 'poison' 🙂 If ledger data had been altered or corrupted on a peer then the transaction results would be inconsistent across endorsing peers, the 'bad' peer will be found out, and the application client can throw out the results from the bad peer before submitting the transaction for ordering/commit. If client application tries to submit a transaction with inconsistent endorsement regardless, this will be detected and the transaction will be invalidated by all peers at commit time.If there is doubt about state database integrity on a specific peer, the state database can be dropped and it will automatically get regenerated from the chain source of truth. If there is doubt about the chain integrity itself, then the peer itself will need to be rebuilt and the chain will be state transferred 
 
 <a name="identity"></a>
 
 
 
-### :information_source:  Composer Identity related issues ('issue', 'request', 'register' etc in Dev/Multi-Org setup)
+### :information_source:   Identity related issues ('issue', 'request', 'register' etc in Dev/Multi-Org setup)
 
 The following are a selection of answers, to help understand what you may be encountering. Check also [**Review card errors / resolutions**](#cardfaq) for identity issues relating to Business Network cards (part of which has identity metadata).
 

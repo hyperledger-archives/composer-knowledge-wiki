@@ -330,6 +330,7 @@ The following are a selection of answers, to help understand what you may be enc
 
 #### :card_index: [back to base camp :camping: ](#top)  
 
+
 <a name="filters"></a>
 
 
@@ -365,13 +366,34 @@ Example of Filter resolve: (meaning: Search on a modeled asset and resolve the d
 
 #### :card_index: [back to base camp :camping: ](#top)   
 
+
 <a name="historian"></a>
+
+
+### :information_source:  Historian Questions
+
+jump to [**Historian Queries**](#historianqueries)for more info on Historian related queries or examples
+
+
+Some typical examples of historian related questions below:
+
+| Message Encountered / Question  | Answer/Resolution
+| :---------------------- | :-----------------------
+| Does Historian prevent 'false' / wrong transactions? | Historian records what was consensually agreed as the 'truth' - the whole point of the blockchain is to detect the 'poison' 🙂 If ledger data had been altered or corrupted on a peer then the transaction results would be inconsistent across endorsing peers, the 'bad' peer will be found out, and the application client can throw out the results from the bad peer before submitting the transaction for ordering/commit. If client application tries to submit a transaction with inconsistent endorsement regardless, this will be detected and the transaction will be invalidated by all peers at commit time.If there is doubt about state database integrity on a specific peer, the state database can be dropped and it will automatically get regenerated from the chain source of truth. If there is doubt about the chain integrity itself, then the peer itself will need to be rebuilt and the chain will be state transferred 
+
+
+
+#### :card_index: [back to base camp :camping: ](#top)  
+
+
+<a name="historianqueries"></a>
+
 
 ### :information_source:  Historian Queries - common asks
 
 Some typical examples of historian queries asked are below (obviously you would build this query per the docs) :
 
-| Filter goal  | Example
+| Query goal / aim  | Example
 | :---------------------- | :-----------------------
 | SELECT ALL | `SELECT org.hyperledger.composer.system.HistorianRecord `
 | Select Transaction Type | ` SELECT org.hyperledger.composer.system.HistorianRecord  WHERE (transactionType == 'myTranType' `
@@ -381,10 +403,6 @@ Some typical examples of historian queries asked are below (obviously you would 
 
 
 #### :card_index: [back to base camp :camping: ](#top)  
-
-| Message Encountered / Question  | Answer/Resolution
-| :---------------------- | :-----------------------
-| Does Historian prevent 'false' / wrong transactions? | Historian records what was consensually agreed as the 'truth' - the whole point of the blockchain is to detect the 'poison' 🙂 If ledger data had been altered or corrupted on a peer then the transaction results would be inconsistent across endorsing peers, the 'bad' peer will be found out, and the application client can throw out the results from the bad peer before submitting the transaction for ordering/commit. If client application tries to submit a transaction with inconsistent endorsement regardless, this will be detected and the transaction will be invalidated by all peers at commit time.If there is doubt about state database integrity on a specific peer, the state database can be dropped and it will automatically get regenerated from the chain source of truth. If there is doubt about the chain integrity itself, then the peer itself will need to be rebuilt and the chain will be state transferred 
 
 <a name="identity"></a>
 

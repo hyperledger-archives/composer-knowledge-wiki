@@ -370,7 +370,9 @@ Example of Filter resolve: (meaning: Search on a modeled asset and resolve the d
 <a name="historian"></a>
 
 
+
 ### :information_source:  Historian Questions
+
 
 jump to [**Historian Queries**](#historianqueries)for more info on Historian related queries or examples
 

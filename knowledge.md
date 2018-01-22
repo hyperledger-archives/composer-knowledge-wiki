@@ -571,14 +571,16 @@ The following are a selection of answers, to help understand what you may be enc
 
 ### :information_source:  Runtime install errors (Composer)
 
-The following are a selection of answers, to help understand what you may be encountering:
+The following are a selection of answers, to help understand what you may be encountering - in some cases, multiple resolution choices may be offered:
 
 | Message encountered | Resolution 
 | :---------------------- | :-----------------------
 | Error: No valid responses from any peers  | see below
 | Error: Error: Endpoint read failed |  This is likely to be a connection (.json) config issue -  it needs to be configured for TLS (or non-TLS if that's your setup) communications - depending on your desired configuration.
 | Error: Error: Error trying to ping. Error: Composer runtime (0.16.1) is not compatible with client (0.16.0) | You have a mismatch of versions. This could occur using Composer REST server, APIs, App Generator or CLI. Suggest to uninstall the relevant modules eg `composer uninstall -g composer-cli` (also `composer-rest-server`, `generator-hyperledger-composer`, `composer-playground` npm modules that you have installed - then `npm install -g` the same level - check [**release notes**](https://github.com/hyperledger/composer/releases/) for the current release level - ensure you do so as a non-privileged user.
-|Error: Error trying to instantiate composer runtime. Error: Error: Invalid results returned ::NOT_FOUND| Has a `composer runtime install` been done? Which document/tutorial are you following? Have you forgotten to create/start the Fabric channel your BN profile is referring to ? Are you trying to run on Windows 7/10 ? Please check these and take appropriate action(s).
+|Error: Error trying to instantiate composer runtime. Error: Error: Invalid results returned ::NOT_FOUND (1/2)| Has a `composer runtime install` been done? Which document/tutorial are you following? Have you forgotten to create/start the Fabric channel your BN profile is referring to ? Are you trying to run on Windows 7/10 ? Please check these and take appropriate action(s).
+|Error: Error trying to instantiate composer runtime. Error: Error: Invalid results returned ::NOT_FOUND (2/2)|Are the channel names correct? Do they match or are there different names specified for the channel in your Fabric config metadata / files vis-a-vis the channel name in the `connection.json` file (which is a constituent part of the .card file you're using for the composer CLI command) - this is often a reason / cause for the error you see.
+
 
 #### :card_index: [back to base camp :camping: ](#top)  
 

@@ -401,7 +401,9 @@ Some typical examples of historian queries asked are below (obviously you would 
 | SELECT ALL | `SELECT org.hyperledger.composer.system.HistorianRecord `
 | Select Transaction Type | ` SELECT org.hyperledger.composer.system.HistorianRecord  WHERE (transactionType == 'myTranType' `
 | with Order By  | `SELECT org.hyperledger.composer.system.HistorianRecord  WHERE (transactionType == 'myTranType') ORDER BY [transactionTimestamp DESC] `
-| Select by Txn ID | SELECT org.hyperledger.composer.system.HistorianRecord WHERE (transactionId==_$trxID)
+| Select by Txn ID | SELECT org.hyperledger.composer.system.HistorianRecord WHERE (transactionId==_$trxID) 
+|Find the History of a particular Asset(1/2) | we have a current issue open for Historian to showhistory of changes/ deltas for a particular asset - https://github.com/hyperledger/composer/issues/991 As a workaround you can do the following - so for sample network `trade-network`
+|Find History ...Asset ...(2/2) | `query selectTransaction{ description: "choose a specific commodity " statement: SELECT org.acme.biznet.Trade WHERE (commodity  == _$commodity ) }` finds all transactions of transaction `Trade` (that are used to update an asset) for a particular asset id - can also add a date range if need be - so that's a query showing what changed - obviously there is an initial AddAsset transaction (see more on that here -> chat.hyperledger.org/channel/composer?msg=eZK96GouZhbAzniB2 - So once you've updated your network to recognise the newly added query defined in your `queries.qry` and the named query is defined in your .cto model file you can try it out . The other way is to use Filters (as opposed to queries):on your REST client - so use a filter using `{"where":{"commodity":"resource:org.acme.biznet.Commodity#ABC"}, "include":"resolve"} `.. so find all transactions for asset with tradingSymbol (ID field) of 'ABC' - ie a relationship - and I can resolve the transaction and the particular asset it relates to. In this case it was 1 transaction (could be more) showing changes and I can see the transaction (with resolved) detail, for that asset
 
 
 
@@ -520,7 +522,7 @@ The following are a selection of answers, to help understand what you may be enc
 
 | Message encountered | Resolution 
 | :---------------------- | :-----------------------
-| Retrieving a FIELD in an Asset | Not presently supported (retrieves the whole record there is an issue raised https://github.com/hyperledger/composer/issues/3020
+| Retrieving a FIELD in an Asset/Resource | Not presently supported (retrieves the whole record there is an issue raised https://github.com/hyperledger/composer/issues/3020
 | ORDER BY (single) not working | for a single `ORDER BY` field you may be hitting this index issue  (you need to define an index) -> https://stackoverflow.com/questions/45919898/order-by-not-working-in-named-query/45966828#45966828 
 |Indexes at the cto file level, in terms of composer concepts | Reliant on Fabric to provide the capability, before Composer is involved: see https://jira.hyperledger.org/browse/FAB-3067
 | ORDER BY (multiple) not working | Not supported presently. Multiple ORDER BY fields is a current limitation of CouchDB see here -> https://github.com/hyperledger/composer/issues/1640 

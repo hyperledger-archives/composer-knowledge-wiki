@@ -100,13 +100,13 @@ There are two place which "store" data in Hyperledger Fabric (the underlying blo
 
 The ledger is the actual **"blockchain"**. It is a file-based ledger which stores serialized blocks. Each block has one or more transactions. Each transaction contains a 'read-write set' which modifies one or more key/value pairs. The ledger is the definitive source of data and is immutable.
 
-The **state database** (or 'World State') holds the last known committed value for any given key - an indexed view into the chainâ€™s transaction log. It is populated when each peer validates and commits a transaction. The state database can always be rebuilt from re-processing the ledger (ie replaying the transactions that led to that state). There are currently two options for the state database: an embedded LevelDB or an external CouchDB.
+The **state database** (or 'World State') holds the last known committed value for any given key - an indexed view into the chain’s transaction log. It is populated when each peer validates and commits a transaction. The state database can always be rebuilt from re-processing the ledger (ie replaying the transactions that led to that state). There are currently two options for the state database: an embedded LevelDB or an external CouchDB.
 
 As an aside, if you are familiar with Hyperledger Fabric 'channels', there is a separate ledger for each channel.
 
-The chain is a transaction log, structured as hash-linked blocks, where each block contains a sequence of _N_ transactions. The block header includes a hash of the blockâ€™s transactions, as well as a hash of the prior blockâ€™s header. In this way, all transactions on the ledger are sequenced and cryptographically linked together.
+The chain is a transaction log, structured as hash-linked blocks, where each block contains a sequence of _N_ transactions. The block header includes a hash of the block’s transactions, as well as a hash of the prior block’s header. In this way, all transactions on the ledger are sequenced and cryptographically linked together.
 
-The state database is simply an indexed view into the chainâ€™s transaction log, it can therefore be regenerated from the chain at any time.
+The state database is simply an indexed view into the chain’s transaction log, it can therefore be regenerated from the chain at any time.
 
 Source: http://hyperledger-fabric.readthedocs.io/en/release/ledger.html
 
@@ -382,7 +382,7 @@ Some typical examples of historian related questions below:
 
 | Message Encountered / Question  | Answer/Resolution
 | :---------------------- | :-----------------------
-| Does Historian prevent 'false' / wrong transactions? | Historian records what was consensually agreed as the 'truth' - the whole point of the blockchain is to detect the 'poison' ðŸ™‚ If ledger data had been altered or corrupted on a peer then the transaction results would be inconsistent across endorsing peers, the 'bad' peer will be found out, and the application client can throw out the results from the bad peer before submitting the transaction for ordering/commit. If client application tries to submit a transaction with inconsistent endorsement regardless, this will be detected and the transaction will be invalidated by all peers at commit time.If there is doubt about state database integrity on a specific peer, the state database can be dropped and it will automatically get regenerated from the chain source of truth. If there is doubt about the chain integrity itself, then the peer itself will need to be rebuilt and the chain will be state transferred 
+| Does Historian prevent 'false' / wrong transactions? | Historian records what was consensually agreed as the 'truth' - the whole point of the blockchain is to detect the 'poison' ?? If ledger data had been altered or corrupted on a peer then the transaction results would be inconsistent across endorsing peers, the 'bad' peer will be found out, and the application client can throw out the results from the bad peer before submitting the transaction for ordering/commit. If client application tries to submit a transaction with inconsistent endorsement regardless, this will be detected and the transaction will be invalidated by all peers at commit time.If there is doubt about state database integrity on a specific peer, the state database can be dropped and it will automatically get regenerated from the chain source of truth. If there is doubt about the chain integrity itself, then the peer itself will need to be rebuilt and the chain will be state transferred 
 
 
 
@@ -682,4 +682,5 @@ You simply create a problem with the tag 'hyperledger-composer'  and provide:
 
 Thank you
 
+#### :card_index: [back to base camp :camping: ](#top)   
 #### :card_index: [back to base camp :camping: ](#top)   

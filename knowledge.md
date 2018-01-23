@@ -1,3 +1,4 @@
+
 ## :sos: :eyes: COMPOSER KNOWLEDGE BASE :eyes: :sos:
 
 This Wiki is a knowledge base to help Composer folks having issues we class as  "_we've seen something similar before"_ or "_gotchas_" :-)  :1st_place_medal:  :2nd_place_medal: :3rd_place_medal: :rocket: :recycle: :sos: :face_with_head_bandage:. The idea is we help steer you towards a resolution :ok_man: :thumbsup:
@@ -13,12 +14,12 @@ Our [**Tutorials**](https://hyperledger.github.io/composer/tutorials/tutorials.h
 
 | [**ACLs**](#acls) | [**Authorization Errors**](#authorization) | [**Blockchain Recap**](#recap)   | [**Business Network Cards**](#bizcards) 
 | :---------------------- | :-----------------------| :----------------------- | :-------------------- 
-| [**Client APIs Usage**](#clientapis) | [**Composer Install Issues**](#installissues) | [**Debugging**](#debug)  | [**Endorsement Policy**](#endorse) 
-| [**Events**](#events) | [**Event Hub Problems**](#eventhub) | [**Filters**](#filters)  | [**Historian**](#historian) 
-| [**Cloud/Kubernetes envs**](#varcloud)  | [**Modeling**](#model) | [**Miscellaneous Items**](#misccomposer) | [**Multi Org Setup/BYFN**](#multiorg) | [**Passport Strategies**](#passport-strategy) 
-| [**Queries**](#queries)  | [**REST APIs**](#restapis)  | [**REST Authentication**](#restauth)  | [**Runtime Install Errors**](#runtime-install)
-| [**Sample Networks**](#samples) | [**Transaction Processors**](#transproc) | [**Upgrading Composer Runtime**](#upgrade) | [**Updating Biz Networks**](#upgradebn)  
-| [**Topic Name**](#samples)  | [**Topic Name**](#bizcards) 
+| [**Client APIs Usage**](#clientapis) | [**Cloud/Kubernetes envs**](#varcloud) | [**Composer Install Issues**](#installissues) | [**Debugging**](#debug)  
+| [**Endorsement Policy**](#endorse) | [**Events**](#events) | [**Event Hub Problems**](#eventhub) | [**Filters**](#filters)  |
+| [**Identity Issues**](#identity) | [**Historian**](#historian) | [**Modeling**](#model) | [**Miscellaneous Items**](#misccomposer) 
+| [**Multi Org Setup/BYFN**](#multiorg) | [**Passport Strategies**](#passport-strategy) | [**Queries**](#queries)  | [**REST APIs**](#restapis)  
+| [**REST Authentication**](#restauth)  | [**Runtime Install Errors**](#runtime-install)| [**Sample Networks**](#samples) | [**Transaction Processors**](#transproc) 
+| [**Upgrading Composer Runtime**](#upgrade) | [**Updating Biz Networks**](#upgradebn) | [**Topic Name**](#samples)  | [**Topic Name**](#bizcards) 
 
 
 Have Fabric Related issues? (ie when used with Composer Dev Env Setup or Tutorials)
@@ -99,13 +100,13 @@ There are two place which "store" data in Hyperledger Fabric (the underlying blo
 
 The ledger is the actual **"blockchain"**. It is a file-based ledger which stores serialized blocks. Each block has one or more transactions. Each transaction contains a 'read-write set' which modifies one or more key/value pairs. The ledger is the definitive source of data and is immutable.
 
-The **state database** (or 'World State') holds the last known committed value for any given key - an indexed view into the chainâ€™s transaction log. It is populated when each peer validates and commits a transaction. The state database can always be rebuilt from re-processing the ledger (ie replaying the transactions that led to that state). There are currently two options for the state database: an embedded LevelDB or an external CouchDB.
+The **state database** (or 'World State') holds the last known committed value for any given key - an indexed view into the chain’s transaction log. It is populated when each peer validates and commits a transaction. The state database can always be rebuilt from re-processing the ledger (ie replaying the transactions that led to that state). There are currently two options for the state database: an embedded LevelDB or an external CouchDB.
 
 As an aside, if you are familiar with Hyperledger Fabric 'channels', there is a separate ledger for each channel.
 
-The chain is a transaction log, structured as hash-linked blocks, where each block contains a sequence of _N_ transactions. The block header includes a hash of the blockâ€™s transactions, as well as a hash of the prior blockâ€™s header. In this way, all transactions on the ledger are sequenced and cryptographically linked together.
+The chain is a transaction log, structured as hash-linked blocks, where each block contains a sequence of _N_ transactions. The block header includes a hash of the block’s transactions, as well as a hash of the prior block’s header. In this way, all transactions on the ledger are sequenced and cryptographically linked together.
 
-The state database is simply an indexed view into the chainâ€™s transaction log, it can therefore be regenerated from the chain at any time.
+The state database is simply an indexed view into the chain’s transaction log, it can therefore be regenerated from the chain at any time.
 
 Source: http://hyperledger-fabric.readthedocs.io/en/release/ledger.html
 
@@ -181,17 +182,18 @@ The Network Admin card is a card, once imported, that provides access to the dep
 | Cannot access local Fabric from dockerised REST server or Node js App | The simplest approach to sharing a card inside and outside a container is to replace the 'localhost' with the IP Number of your docker host in the connection.json file of the card you are using. See  https://stackoverflow.com/questions/47804516/hyperledger-composer-cannot-connect-with-dockerized-node-js-app/47818372 
 | Authorization errors Playground local | See **answer** at https://stackoverflow.com/questions/47617442/authorization-failure-when-creating-new-business-network-in-local-playground
 | Can't export BN card  in Playground | you're using the 'in-browser' connector (not connected to a running Fabric) - you can only export cards for a runtime Fabric environment
-| |  
-  
+| How to export card from Playground | After issuing the identity/participant,add to wallet - then connect to the business network via 'Use Now' in ID registry. Return to 'My business networks' then click on the 'export' icon alongside the card you wish to export (from the list of BN card modals displayed). 
 
 <a name="cardapis"></a>
+
+
 ### Card API errors / Resolutions
 
 | Message/Issue encountered | Resolution 
 | :---------------------- | :-----------------------
-| How to export from Playground | After issuing the identity/participant, connect to the business network, return to 'My business networks' then click the 'export' icon alongside the card you wish to export (from the list of cards).
 | How to switch BN cards using JS APIs | `const BusinessNetworkConnection = require('composer-client').BusinessNetworkConnection;  let businessNetworkConnection = new BusinessNetworkConnection();   return businessNetworkConnection.connect('lenny@digitalPropertyNetwork')  .then(() => { .........blah blah do something ; } return businessNetworkConnection.disconnect(); <switch to next card>` See also example of `useIdentity` here -> https://github.com/hyperledger/composer-sample-networks/blob/master/packages/pii-network/test/pii.js#L168
 | Issue Identity and use Card | Issue identity, import card, connect to the business network using the card `businessNetworkConnection.issueIdentity(NS + '#' + userData.id, userData.user); ....  var userCard = new IdCard({...});  userCard.setCredentials(credentials); ...  adminConnection.importCard(userCardName, userCard); .... .then(() => {     // Connect to the business network using the network admin identity ...     businessNetworkConnection = new BusinessNetworkConnection({ cardStore: cardStore });   businessNetworkConnection.connect(userCardName); } ...`
+|Issue Identity and switch between issued cards | see https://github.com/hyperledger/composer-sample-networks/blob/master/packages/pii-network/test/pii.js#L139 onwards (from the PII sample networks) - the principle of connecting to the network with the card ycreated and being persisted to a File CardStore (as opposed to the in Memory CardStore example used in this test script) is the same.
 
 
 #### :card_index: [back to base camp :camping: ](#top)   
@@ -213,6 +215,21 @@ Below are some generic or specific questions on using client-side JS APIs
 
 #### :card_index: [back to base camp :camping: ](#top)  
 
+
+<a name="varcloud"></a>
+
+
+### :information_source:  Cloud Issues (eg. providers like IBM/Azure Cloud / Kubernetes Support / Cloud hosted Container service)
+
+Please seek support through the official channels for the Provider hosting your Hyperledger Fabric/Composer environment. (Composer cannot provide assistance with 3rd party Cloud environments per se, as support in this knowledge base is provided for local Development or local DevTest environments) - see link below for more info
+
+| Message encountered | Resolution 
+| :---------------------- | :-----------------------
+| IBM Sandbox / Kubernetes support  |for support with your particular environment on IBM Cloud you should go to this page https://console.bluemix.net/docs/support/index.html#contacting-support
+| Microsoft Azure | See [Microsoft support](https://support.microsoft.com/en-us) or [here](https://social.msdn.microsoft.com/Forums/en-US/home?forum=azureblockchain) for more information.
+
+
+#### :card_index: [back to base camp :camping: ](#top)  
 
 
 <a name="installissues"></a>
@@ -268,6 +285,8 @@ More info on troubleshooting or understanding issues related to endorsement of t
 
 | Message encountered | Resolution 
 | :---------------------- | :-----------------------
+| Can I emit events and catch (err) using JS ? | Check this : https://hyperledger.github.io/composer/reference/js_scripts.html, section "Error handling in transaction processor functions" ```return function()     .then(function(){})      .catch(function(err){          emit(someevent);          throw err;       }) ```
+| (continued ...) | While you can issue an 'emit' at any point in your transaction logic, that event will not actually be emitted until the transaction is committed.  However, throwing the error makes the transaction roll back - changes made by transactions are atomic, either the transaction is successful and all changes are applied, or the transaction fails and no changes are applied.
 |How do i retrieve events, using a query? | Events are emitted by Txn Processors and 'subscribed to' by applications - you cannot query them using Composer Queries as they are not 'resources' per se - you will get an error eg.  `Error: The query compiler does not support resources of this type`
 
 
@@ -312,6 +331,7 @@ The following are a selection of answers, to help understand what you may be enc
 
 #### :card_index: [back to base camp :camping: ](#top)  
 
+
 <a name="filters"></a>
 
 
@@ -347,34 +367,62 @@ Example of Filter resolve: (meaning: Search on a modeled asset and resolve the d
 
 #### :card_index: [back to base camp :camping: ](#top)   
 
+
 <a name="historian"></a>
 
-### :information_source:  Historian Queries - common asks
 
-Some typical examples of historian queries asked are below (obviously you would build this query per the docs) :
 
-| Filter goal  | Example
+### :information_source:  Historian Questions
+
+
+jump to [**Historian Queries**](#historianqueries) for more info on Historian related queries or examples
+
+
+Some typical examples of historian related questions below:
+
+| Message Encountered / Question  | Answer/Resolution
 | :---------------------- | :-----------------------
-| SELECT ALL | `SELECT org.hyperledger.composer.system.HistorianRecord `
-| Select Transaction Type | ` SELECT org.hyperledger.composer.system.HistorianRecord  WHERE (transactionType == 'myTranType' `
-| with Order By  | `SELECT org.hyperledger.composer.system.HistorianRecord  WHERE (transactionType == 'myTranType') ORDER BY [transactionTimestamp DESC] `
-| Select by Txn ID | SELECT org.hyperledger.composer.system.HistorianRecord WHERE (transactionId==_$trxID)
+| Does Historian prevent 'false' / wrong transactions? | Historian records what was consensually agreed as the 'truth' - the whole point of the blockchain is to detect the 'poison' ?? If ledger data had been altered or corrupted on a peer then the transaction results would be inconsistent across endorsing peers, the 'bad' peer will be found out, and the application client can throw out the results from the bad peer before submitting the transaction for ordering/commit. If client application tries to submit a transaction with inconsistent endorsement regardless, this will be detected and the transaction will be invalidated by all peers at commit time.If there is doubt about state database integrity on a specific peer, the state database can be dropped and it will automatically get regenerated from the chain source of truth. If there is doubt about the chain integrity itself, then the peer itself will need to be rebuilt and the chain will be state transferred 
 
 
 
 #### :card_index: [back to base camp :camping: ](#top)  
 
-<a name="varcloud"></a>
+
+<a name="historianqueries"></a>
 
 
-### :information_source:  Cloud Issues eg. providers like IBM/Azure Cloud / Kubernetes Support / Cloud hosted Container service
+### :information_source:  Historian Queries - common asks
 
-Please seek support through the official channels for the Provider hosting your Hyperledger Fabric/Composer environment. (Composer cannot provide assistance with 3rd party Cloud environments per se, as support in this knowledge base is provided for local Development or local DevTest environments) - see link below for more info
+Some typical examples of historian queries asked are below (obviously you would build this query per the docs) :
+
+| Query goal / aim  | Example
+| :---------------------- | :-----------------------
+| SELECT ALL | `SELECT org.hyperledger.composer.system.HistorianRecord `
+| Select Transaction Type | ` SELECT org.hyperledger.composer.system.HistorianRecord  WHERE (transactionType == 'myTranType' `
+| with Order By  | `SELECT org.hyperledger.composer.system.HistorianRecord  WHERE (transactionType == 'myTranType') ORDER BY [transactionTimestamp DESC] `
+| Select by Txn ID | SELECT org.hyperledger.composer.system.HistorianRecord WHERE (transactionId==_$trxID) 
+|Find the History of a particular Asset(1/2) | we have a current issue open for Historian to showhistory of changes/ deltas for a particular asset - https://github.com/hyperledger/composer/issues/991 As a workaround you can do the following - so for sample network `trade-network`
+|Find History ...Asset ...(2/2) | `query selectTransaction{ description: "choose a specific commodity " statement: SELECT org.acme.biznet.Trade WHERE (commodity  == _$commodity ) }` finds all transactions of transaction `Trade` (that are used to update an asset) for a particular asset id - can also add a date range if need be - so that's a query showing what changed - obviously there is an initial AddAsset transaction (see more on that here -> chat.hyperledger.org/channel/composer?msg=eZK96GouZhbAzniB2 - So once you've updated your network to recognise the newly added query defined in your `queries.qry` and the named query is defined in your .cto model file you can try it out . The other way is to use Filters (as opposed to queries):on your REST client - so use a filter using `{"where":{"commodity":"resource:org.acme.biznet.Commodity#ABC"}, "include":"resolve"} `.. so find all transactions for asset with tradingSymbol (ID field) of 'ABC' - ie a relationship - and I can resolve the transaction and the particular asset it relates to. In this case it was 1 transaction (could be more) showing changes and I can see the transaction (with resolved) detail, for that asset. See other link I sent you above `targetRegistry` - the example shown is 'AddAsset' - transactions are ordinarily the 'update' but in any case the targetRegistries for Update/Delete would be UpdateAsset and RemoveAsset respectively
+
+
+
+#### :card_index: [back to base camp :camping: ](#top)  
+
+<a name="identity"></a>
+
+
+
+### :information_source:   Identity related issues ('issue', 'request', 'register' etc in Dev/Multi-Org setup)
+
+The following are a selection of answers, to help understand what you may be encountering. Check also [**Review card errors / resolutions**](#cardfaq) for identity issues relating to Business Network cards (part of which has identity metadata).
+
 
 | Message encountered | Resolution 
 | :---------------------- | :-----------------------
-| IBM Sandbox / Kubernetes support  |for support with your particular environment on IBM Cloud you should go to this page https://console.bluemix.net/docs/support/index.html#contacting-support
-| Microsoft Azure | See [Microsoft support](https://support.microsoft.com/en-us) or [here](https://social.msdn.microsoft.com/Forums/en-US/home?forum=azureblockchain) for more information.
+|Identity request failure - SSL (1) | Running `composer identity request -c PeerAdmin@byfn-network-org1-only -u admin -s adminpw -d alice` with error "Error: failed to request identity. Error trying to enroll user and return certificates. Error: Calling enrollment endpoint failed with error [Error: write EPROTO 140337610980224:error:1411713E:SSL routines:ssl_check_srvr_ecc_cert_and_alg:ecc cert not for signing:../deps/openssl/openssl/ssl/ssl_lib.c:2520: 140337610980224:error:14082130:SSL routines:ssl3_check_cert_and_algorithm:bad ecc cert:../deps/openssl/openssl/ssl/s3_clnt.c:3550:]" **Resolution:** its likely you have `https` set for the `"ca":`URL entry in connection.json file - when SSL is not enabled in your environment - change it to `http://<url>:7054` for the `ca` entry, and rebuild your card file (you can use `composer card delete user@biznetwork` to remove the old then import the new `user.card` file (with updated json file) using `composer card import -f user.card`  - then connect with it `composer network ping -c user@biznetwork` to get the credentials set.
+|Identity request failure - SSL (2) | Running `composer identity request` command yields "error Error: failed to request identity. Error trying to enroll user and return certificates. Error: Calling enrollment endpoint failed with error [Error: write EPROTO 139748722722624:error:140770FC:SSL routines:SSL23_GET_SERVER_HELLO:unknown protocol:../deps/openssl/openssl/ssl/s23_clnt.c:797:  ]" **Resolution:** its likely you have `https` set for the `"ca":`URL entry - see above for resolution
+|Identity enrolment failure - multi-org | Error: Error trying login and get user Context. Error: Error trying to enroll user or load channel configuration. Error: Calling enrollment endpoint failed with error [Error: write EPROTO 139720483138376:error:1411713E:SSL routines:ssl_check_srvr_ecc_cert_and_alg:ecc cert not for signing:../deps/openssl/openssl/ssl/ssl_lib.c:2520: 139720483138376:error:14082130:SSL routines:ssl3_check_cert_and_algorithm:bad ecc_cert:../deps/openssl/openssl/ssl/s3_clnt.c:3550:]**Resolution:**  This is related to TLS, if you've enabled TLS in your peers and CA nodes, make sure you pasted in the certificates (PEMs) in the connection profile
 
 
 #### :card_index: [back to base camp :camping: ](#top)  
@@ -474,7 +522,7 @@ The following are a selection of answers, to help understand what you may be enc
 
 | Message encountered | Resolution 
 | :---------------------- | :-----------------------
-| Retrieving a FIELD in an Asset | Not presently supported (retrieves the whole record there is an issue raised https://github.com/hyperledger/composer/issues/3020
+| Retrieving a FIELD in an Asset/Resource | Not presently supported (retrieves the whole record there is an issue raised https://github.com/hyperledger/composer/issues/3020
 | ORDER BY (single) not working | for a single `ORDER BY` field you may be hitting this index issue  (you need to define an index) -> https://stackoverflow.com/questions/45919898/order-by-not-working-in-named-query/45966828#45966828 
 |Indexes at the cto file level, in terms of composer concepts | Reliant on Fabric to provide the capability, before Composer is involved: see https://jira.hyperledger.org/browse/FAB-3067
 | ORDER BY (multiple) not working | Not supported presently. Multiple ORDER BY fields is a current limitation of CouchDB see here -> https://github.com/hyperledger/composer/issues/1640 
@@ -484,6 +532,7 @@ The following are a selection of answers, to help understand what you may be enc
 |CONTAINS Example 1: multi-value | ```SELECT org.acme.sample.TestAsset WHERE (stringArrayValues CONTAINS ["pumpkin", "jello", "candycane"]) ```
 |CONTAINS Example 2: single-value with a Query def | ```query myquery {          description: "Example CONTAINS Query" statement:  SELECT org.acme.sample.TestAsset WHERE (stringArrayValues CONTAINS (value == "pumpkin"))```
 |CONTAINS Example 3 - parameter based  | ```SELECT org.acme.mynetwork.Offer WHERE ( Offers CONTAINS _$offerId) ```
+|Query Historian for history of created Assets | the attribute `targetRegistry` is a field available to `transaction` (from `transactionInvoked` from the system transaction registry class eg. `org.hyperledger.composer.system.AddAsset` - see here https://github.com/hyperledger/composer/blob/master/packages/composer-common/lib/system/org.hyperledger.composer.system.cto#L114 - so you can query the AddAsset class and match on the target Asset Registry (eg 'BankAccount' asset) type eg something like `SELECT org.hyperledger.composer.system.AddAsset WHERE targetRegistry == 'resource:org.hyperledger.composer.system.AssetRegistry#org.acme.account.BankAccount' `
 
 ### Queries - Current issues
 
@@ -525,14 +574,16 @@ The following are a selection of answers, to help understand what you may be enc
 
 ### :information_source:  Runtime install errors (Composer)
 
-The following are a selection of answers, to help understand what you may be encountering:
+The following are a selection of answers, to help understand what you may be encountering - in some cases, multiple resolution choices may be offered:
 
 | Message encountered | Resolution 
 | :---------------------- | :-----------------------
 | Error: No valid responses from any peers  | see below
 | Error: Error: Endpoint read failed |  This is likely to be a connection (.json) config issue -  it needs to be configured for TLS (or non-TLS if that's your setup) communications - depending on your desired configuration.
 | Error: Error: Error trying to ping. Error: Composer runtime (0.16.1) is not compatible with client (0.16.0) | You have a mismatch of versions. This could occur using Composer REST server, APIs, App Generator or CLI. Suggest to uninstall the relevant modules eg `composer uninstall -g composer-cli` (also `composer-rest-server`, `generator-hyperledger-composer`, `composer-playground` npm modules that you have installed - then `npm install -g` the same level - check [**release notes**](https://github.com/hyperledger/composer/releases/) for the current release level - ensure you do so as a non-privileged user.
-|Error: Error trying to instantiate composer runtime. Error: Error: Invalid results returned ::NOT_FOUND| Has a `composer runtime install` been done? Which document/tutorial are you following? Have you forgotten to create/start the Fabric channel your BN profile is referring to ? Are you trying to run on Windows 7/10 ? Please check these and take appropriate action(s).
+|Error: Error trying to instantiate composer runtime. Error: Error: Invalid results returned ::NOT_FOUND (1/2)| Has a `composer runtime install` been done? Which document/tutorial are you following? Have you forgotten to create/start the Fabric channel your BN profile is referring to ? Are you trying to run on Windows 7/10 ? Please check these and take appropriate action(s).
+|Error: Error trying to instantiate composer runtime. Error: Error: Invalid results returned ::NOT_FOUND (2/2)|Are the channel names correct? Do they match or are there different names specified for the channel in your Fabric config metadata / files vis-a-vis the channel name in the `connection.json` file (which is a constituent part of the .card file you're using for the composer CLI command) - this is often a reason / cause for the error you see.
+
 
 #### :card_index: [back to base camp :camping: ](#top)  
 
@@ -565,8 +616,9 @@ The following are a selection of answers, to help understand what you may be enc
 | :---------------------- | :-----------------------
 | Timestamps in transactions - how to get the same timestamp across all peers | The timestamp is client side sourced - so will be the same across all endorsing peers. Client application don't actually generate the timestamp, it is generated by Composer so the format will be consistent - the timestamp  represents when a  transaction is submitted, not committed.
 | Transaction rollback - errors in transactions | Changes made by **transactions** are atomic, either the transaction is successful and all changes are applied, or the transaction fails and no changes are applied. Any exceptions thrown from a transaction processor function will cause the entire **transaction** to be rolled back, leaving no changes to the blockchain or world state. So nothing is persisted if a transaction fails, Composer throw an exception and the transaction gets rolled back by Fabric. https://hyperledger.github.io/composer/reference/js_scripts.html
-| Calling a TP function from another | see example below - two parts
-| (1) Calling from main script file - sample callout from `script.js`: | `var returnVal;     //And now call the function in func2.js var returnVal= sayHello("Jon Doe"); 	var code = returnVal.code; var msg= returnVal.message; console.log('The returned message and code are: Msg-> ' + msg + ' the code -> ' + code );` // output is "The returned message and code are: Msg -> Hello Jon Doe the code -> 11"
+|Can a Composer transaction call another Transaction? |No - a transaction cannot presently be called from another transaction. In Hyperledger Fabric (which Hyperledger Composer is currently using), you are not able to read your own writes from within a transaction, meaning that you cannot add something to a registry in your TP and then read it, in the same transaction. However, a transaction processor can call other functions to allow for code modularisation, but it will only be registered as a single transaction request, in the transaction registry. 
+| Calling a TP **function** from another | see example below - two parts
+| (1) Calling from main script file - sample callout from `script.js`: | `var returnVal;     //And now call the function in func2.js var returnVal= sayHello("Jon Doe"); 		 var code = returnVal.code; var msg= returnVal.message; console.log('The returned message and code are: Msg-> ' + msg + ' the code -> ' + code );` // output is "The returned message and code are: Msg -> Hello Jon Doe the code -> 11"
 | (2) Called function - defined in file `func2.js` |  `function sayHello(name) { retMsg = "hello " + name; return {code: 11, message: retMsg}; }` 
 |Catching errors in a JS TP function | sample code is shown (make sure to return a Promise) `return bizNetworkConnection.submitTransaction(transaction).then((result) => {             console.log("Tx Result", result) ; }).catch((exception) => { console.log("error", exception);` })
 | Calling out of TPF using `post(url, resource)` and setting headers | here's an example here -> https://hyperledger.github.io/composer/integrating/call-out.html   application/json headers not yet supported in post -> see example https://stackoverflow.com/questions/43209924/rest-api-use-the-accept-application-json-http-header - issue raised for this -> https://github.com/hyperledger/composer/issues/3071
@@ -630,4 +682,5 @@ You simply create a problem with the tag 'hyperledger-composer'  and provide:
 
 Thank you
 
+#### :card_index: [back to base camp :camping: ](#top)   
 #### :card_index: [back to base camp :camping: ](#top)   

@@ -17,7 +17,7 @@ Our [**Tutorials**](https://hyperledger.github.io/composer/tutorials/tutorials.h
 | [**Client APIs Usage**](#clientapis) | [**Cloud/Kubernetes envs**](#varcloud) | [**Composer Install Issues**](#installissues) | [**Debugging**](#debug)  
 | [**Endorsement Policy**](#endorse) | [**Events**](#events) | [**Event Hub Problems**](#eventhub) | [**Filters**](#filters)  |
 | [**Identity Issues**](#identity) | [**Historian**](#historian) | [**Modeling**](#model) | [**Miscellaneous Items**](#misccomposer) 
-| [**Multi Org Setup/BYFN**](#multiorg) | [**Passport Strategies**](#passport-strategy) | [**Queries**](#queries)  | [**REST APIs**](#restapis)  
+| [**Multi Org Setup/BYFN**](#multiorg) | [**Node / NVM Issues**](#node-issues) [**Passport Strategies**](#passport-strategy) | [**Queries**](#queries)  | [**REST APIs**](#restapis)  
 | [**REST Authentication**](#restauth)  | [**Runtime Install Errors**](#runtime-install)| [**Sample Networks**](#samples) | [**Transaction Processors**](#transproc) 
 | [**Upgrading Composer Runtime**](#upgrade) | [**Updating Biz Networks**](#upgradebn) | [**Topic Name**](#samples)  | [**Topic Name**](#bizcards) 
 
@@ -70,16 +70,14 @@ The following are a selection of answers, to help understand what you may be enc
 |  | 4. org.acme.perishable.**  all resources and everything under that namespace (recursive)
 | Controlling access to a particular field |currently not possible for property (field) based access control in ACL runtime -> https://github.com/hyperledger/composer/issues/983 
 | ..(continued ..) | If your singular field control relateds to 'authorisation' (who's allowed to see a particular asset) you can maybe store a hash of the authorised list (of participants allowed) in an array eg. `String[] Authorised optional` then a rule something like 
-```
-
-rule sampleRule {
+| ..(continued ..) | rule sampleRule {
    description: "only allowed users"
    participant(p): "org.acme.model.Participant"
    operation: ALL
    resource(r): "org.acme.model.Asset"
    condition: ( ( r.Authorised.indexOf(hashCode(p.getIdentifier()) > -1 ) || p.getIdentifier() === r.owner.getIdentifier()
-   action: ALLOW
-```
+   action: ALLOW 
+   
 where `hashCode` is a function defined in a script file in js directory .... and `owner` is a relationship field to the participant
 
 
@@ -100,13 +98,13 @@ There are two place which "store" data in Hyperledger Fabric (the underlying blo
 
 The ledger is the actual **"blockchain"**. It is a file-based ledger which stores serialized blocks. Each block has one or more transactions. Each transaction contains a 'read-write set' which modifies one or more key/value pairs. The ledger is the definitive source of data and is immutable.
 
-The **state database** (or 'World State') holds the last known committed value for any given key - an indexed view into the chain�s transaction log. It is populated when each peer validates and commits a transaction. The state database can always be rebuilt from re-processing the ledger (ie replaying the transactions that led to that state). There are currently two options for the state database: an embedded LevelDB or an external CouchDB.
+The **state database** (or 'World State') holds the last known committed value for any given key - an indexed view into the chain’s transaction log. It is populated when each peer validates and commits a transaction. The state database can always be rebuilt from re-processing the ledger (ie replaying the transactions that led to that state). There are currently two options for the state database: an embedded LevelDB or an external CouchDB.
 
 As an aside, if you are familiar with Hyperledger Fabric 'channels', there is a separate ledger for each channel.
 
-The chain is a transaction log, structured as hash-linked blocks, where each block contains a sequence of _N_ transactions. The block header includes a hash of the block�s transactions, as well as a hash of the prior block�s header. In this way, all transactions on the ledger are sequenced and cryptographically linked together.
+The chain is a transaction log, structured as hash-linked blocks, where each block contains a sequence of _N_ transactions. The block header includes a hash of the block’s transactions, as well as a hash of the prior block’s header. In this way, all transactions on the ledger are sequenced and cryptographically linked together.
 
-The state database is simply an indexed view into the chain�s transaction log, it can therefore be regenerated from the chain at any time.
+The state database is simply an indexed view into the chain’s transaction log, it can therefore be regenerated from the chain at any time.
 
 Source: http://hyperledger-fabric.readthedocs.io/en/release/ledger.html
 
@@ -240,7 +238,8 @@ More info on the kinds of debugging, logging and Editor breakpoint setting is sh
 
 | Message encountered | Resolution 
 | :---------------------- | :-----------------------
-| npm install errors on installing Composer | 1. INSTALLING COMPOSER AS A NON-PRIVILEGED USER - IE NON-ROOT.     Ideally, when you install composer modules globally (eg. composer-cli) you should install using a designated, non-root user. If there are issues (eg, on Ubuntu with permissions to write/update node directories located in system directories like /usr/local) - the solution is perform the npm install to a directory you have access to - rather than resort to root or superuser access, as this is not good practice. Here is what to do to set the npm prefix to a given directory, ...
+| npm install errors on install Composer (option 1) |Follow the best practices here https://docs.npmjs.com/getting-started/fixing-npm-permissions including recommendation to install  a Node Version Manager (install NVM then use that to manage Node installs)
+| npm install errors on installing Composer (option 2) | 1. INSTALLING COMPOSER AS A NON-PRIVILEGED USER - IE NON-ROOT.     Ideally, when you install composer modules globally (eg. composer-cli) you should install using a designated, non-root user. If there are issues (eg, on Ubuntu with permissions to write/update node directories located in system directories like /usr/local) - the solution is perform the npm install to a directory you have access to - rather than resort to root or superuser access, as this is not good practice. Here is what to do to set the npm prefix to a given directory, ...
 | ..continued .... | `npm config set prefix /home/myuser/` In this case, global binaries are placed in /home/myuser/bin which is in your PATH, and the modules are placed in /home/myuser/lib ... This is a method to do all the 'global' installs as non-root
 
 #### :card_index: [back to base camp :camping: ](#top
@@ -400,6 +399,7 @@ Some typical examples of historian queries asked are below (obviously you would 
 | :---------------------- | :-----------------------
 | SELECT ALL | `SELECT org.hyperledger.composer.system.HistorianRecord `
 | Select Transaction Type | ` SELECT org.hyperledger.composer.system.HistorianRecord  WHERE (transactionType == 'myTranType' `
+| Select Transaction Class | `SELECT org.acme.biznet.PaymentTxn WHERE (mypaymentID == '001' `     ie just one transaction class
 | with Order By  | `SELECT org.hyperledger.composer.system.HistorianRecord  WHERE (transactionType == 'myTranType') ORDER BY [transactionTimestamp DESC] `
 | Select by Txn ID | SELECT org.hyperledger.composer.system.HistorianRecord WHERE (transactionId==_$trxID) 
 |Find the History of a particular Asset(1/2) | we have a current issue open for Historian to showhistory of changes/ deltas for a particular asset - https://github.com/hyperledger/composer/issues/991 As a workaround you can do the following - so for sample network `trade-network`
@@ -451,6 +451,7 @@ The following are a selection of answers, to help understand what you may be enc
 
 | Message encountered | Resolution 
 | :---------------------- | :-----------------------
+| Is Composer production capable ? Isn't it just a Dev framework for prototyping |Indeed, Hyperledger Composer is a development framework but it is also a runtime abstraction layer for executing smart contracts in which a business network (eg. say 'trade settlement'  or 'supply chain finance' etc etc) is deployed as a runtime smart contract, on the blockchain, between the parties involved, and upon which all have agreed the terms (what the model is, the data elements, the security, the access control, how identities are issued, , the contract terms blah blah). Sure, Composer makes it easier to develop blockchain applications and smart contracts - that's one of its aims, as well as adding in all of the consistency, validation or gruntwork you would otherwise have to do as an application developer (you can get an insight into that here -> https://blog.selman.org/2017/07/08/getting-started-with-blockchain-development where Fabric and Composer are compared. That is the development perspective but also the runtime perspective as I've alluded to above. Hyperledger Composer currently uses Hyperledger Fabric as the underlying 'blockchain infrastructure' or underlying blockchain technology, put simply. This can be configured in many ways in a secure Cloud environent etc etc. Composer is aimed at production deployment/scalability - ultimately, you'll be deploying business networks and smart contract transaction logic (written in a mainstream app dev language so app developers don't need specialist language skills) that will execute on the blockchain network (wherever that is deployed, however configured, privacy etc) that you (as an organisation etc) will configure (ie between the parties involved). Composer delivers native Node.js support with Composer v0.17.x preview release that runs with Fabric v1.1 (alpha version) and that version of Fabric will be available as a GA production ready release in the near future (obviously Fabric v1.0.x release is already out there).Furthermore, your Composer's Javascript language and engine can call the native Fabric APIs (to pull in all of the functionality that offers inside Composer contract logic)  So Composer is both the development framework, the modeler and the runtime execution on the blockchain ; as well as all managing all the other important aspects of working with that business network, such as managing identity,access control, participation, API support and connectivity elements essential to working with/transacting on a blockchain network. Hope this helps.
 | Modeling/Storing images/PDFs/media | You can use String and base64 encode it - as a field in an Asset for example, and have responsibility for decoding later etc etc But would you want to store it on the blockchain? You decide of course.  If you wanted to you could see an SO thread here https://stackoverflow.com/questions/21878404/how-can-i-convert-mp3-file-to-base64-encoded-string/23665155 or here see https://stackoverflow.com/questions/47751609/how-to-deal-with-forms-images-videos-of-an-asset-in-hyperledger-composer .  Storing images, scans, audio files is not a 'best practice' - rather, a cryptographic hash of it (referenced off-chain) is verifiable proof that the source is the exact image/media file that was 'hashed' at the time the 'transaction' was recorded on the blockchain and link out of the chain, to a URL containing the verifiable source (and comparable hash). Examples may be: doctor/patient audio discussions (not least the privacy elements!) & consultation recordings, PDFs, mp3s, image files. Another issue is that an encoded base64 image string (if you chose to encode the media/image file that is) will also need to be transmitted to the other peers participating in consensus and written to their copy of the master ledger. It is therefore more efficient, to only share the hash (not the base64 encoded contents with each peer).
 
 
@@ -490,10 +491,26 @@ We only use the Fabric 'BYFN' sample network as a means to demonstrate the Multi
 | :---------------------- | :-----------------------
 | Multi-Org on separate physical machines | See Rocketchat here ->  https://chat.hyperledger.org/channel/composer?msg=JtwfHPJmbSgLG5dr5
 | As above - other things to consider | https://chat.hyperledger.org/channel/composer?msg=f8yyrCfaBKXwt9qKH
+| Adding a peer to a single Org, multiple machines (external tutorial based on 0.16.x) | See https://discourse.skcript.com/t/setting-up-a-blockchain-business-network-with-hyperledger-fabric-composer-running-in-multiple-physical-machine/602 for example on adding a peer on a separate machine. Here are some pointers: 1) At a guess your containers can't 'see' each other properly across the physical machines (docker can't do it for you!). (You may also find (say) that if you have 2 peers running on one physical machine and another (set of) Peer(s) on the other machine are trying to hit on the same Port (on that machine). Perhaps trying a Fabric with just 1 peer on each physical machine might be a good place to start. 2) From a Composer perspective the key is the connection.json file (as part of the business network card you build) that you use to connect to your Fabric runtime (eg peers etc). (If you are using TLS then you need to sort out certificates and hostnames too.) 3) From a Fabric perspective, ALL your Peer containers and your orderer on your Physical machines /VMs need to have connectivity/resolution between each other. You will need to plan out the Address resolution and Routing, with port forwarding too. Depending on the way you have set up your machines you may find that the "extra_hosts:" feature of Docker Compose is useful. (I think that the Peers try to 'chat' with each other on the same port number so you will need to manage any conflicts.) 4) Before putting Composer on top of your custom Fabric we generally advise people to install the Fabric Marbles Sample demo on all their peers -> to prove Fabric is working as expected before adding Composer. If you have problems with Fabric Marbles - please check the #fabric channel. 5) At this time we don't have a Multi-Machine tutorial, but one of the members of the channel has a doc for a Single Org on 2 machines that you can read more on here . Hope this helps.
 
 
 
 #### :card_index: [back to base camp :camping: ](#top)  
+
+
+<a name="node-issues"></a>
+
+
+### :information_source:  Node Related Issues (install issues)
+
+The following are a selection of answers, to help understand what you may be encountering:
+
+| Message encountered | Resolution 
+| :---------------------- | :-----------------------
+Error: Failed to load connector module "composer-connector-hlfv1" for connection type "hlfv1". | Often see on `./createPeerAdminCard.sh` for example. RESOLUTION: 1) check Node version is supported version from our docs 2) If wrong version - a) uninstall node b) install nvm c) install correct node version using NVM you installed d) uninstall the composer modules using npm uninstall -g composer-cli etc etc  e) do a teardown (from fabric-tools f) rm -rf $HOME/.composer to remove old business network cards g) decide if you're installing 0.16.x or 0.16.x Composer - you will need to set FABRIC_VERSION=hlfv11 if 0.17.x so it pulls the correct Fabric runtime docker containers g) re-install composer using npm install -g composer-cli etc etc - as per 'Step 1' of the Install docs page. We recommend that you use nvm to manage your node install and do everything under your current user, ie don't use sudo for Composer installs specifically - just read the install docs for guidance.
+
+
+#### :card_index: [back to base camp :camping: ](#top) 
 
 
 <a name="passport-strategy"></a>
@@ -583,6 +600,7 @@ The following are a selection of answers, to help understand what you may be enc
 | Error: Error: Error trying to ping. Error: Composer runtime (0.16.1) is not compatible with client (0.16.0) | You have a mismatch of versions. This could occur using Composer REST server, APIs, App Generator or CLI. Suggest to uninstall the relevant modules eg `composer uninstall -g composer-cli` (also `composer-rest-server`, `generator-hyperledger-composer`, `composer-playground` npm modules that you have installed - then `npm install -g` the same level - check [**release notes**](https://github.com/hyperledger/composer/releases/) for the current release level - ensure you do so as a non-privileged user.
 |Error: Error trying to instantiate composer runtime. Error: Error: Invalid results returned ::NOT_FOUND (1/2)| Has a `composer runtime install` been done? Which document/tutorial are you following? Have you forgotten to create/start the Fabric channel your BN profile is referring to ? Are you trying to run on Windows 7/10 ? Please check these and take appropriate action(s).
 |Error: Error trying to instantiate composer runtime. Error: Error: Invalid results returned ::NOT_FOUND (2/2)|Are the channel names correct? Do they match or are there different names specified for the channel in your Fabric config metadata / files vis-a-vis the channel name in the `connection.json` file (which is a constituent part of the .card file you're using for the composer CLI command) - this is often a reason / cause for the error you see.
+|Error: Failed to load composer module "composer-connector-undefined" for connection type "undefined" | This occurs because you have a HLF v1.1 runtime environment (fabric v1.1-alpha containers) and composer runtime of 0.16.x - this will not work - please see the 'ready reckoner' table of 'which Composer version works with which Fabric version -> https://github.com/hyperledger/composer/wiki STEPS TO FIX so you can use Composer v0.16.x :  1) unset FABRIC_VERSION variable  2) npm uninstall -g composer-cli 3) npm uninstall -g composer-playground and other modules eg composer-rest-server 4) rm -rf $HOME/.composer 5) from fabric-tools run ./teardownFabric.sh 6) remove any lingering dev-xx business network containers you may previously have deployed (they are separate docker containers eg `docker stop xx` ; `docker rm xxx ` ) 7) npm install -g composer-cli as non-root user 8 ) rm -rf fabric-tools dir && mkdir fabric-tools dir 9) get newer fabric tools zip -> curl -O https://raw.githubusercontent.com/hyperledger/composer-tools/master/packages/fabric-dev-servers/fabric-dev-servers.zip && unzip fabric-dev-servers.zip inside fabric-tools 10) from fabric-tools ./startFabric.sh ; ./createPeerAdminCard.sh 9) npm install -g composer-playground, composer-rest-server etc 10) then try composer runtime install -n mynetworkname -c PeerAdmin@hlfv1 and it should work - then you can proceed to do a `composer network start` command to instantiate a business network, as normal
 
 
 #### :card_index: [back to base camp :camping: ](#top)  
@@ -635,6 +653,8 @@ The following are a selection of answers, to help understand what you may be enc
 The following are a selection of answers, to help understand what you may be encountering:
 
 | Message encountered | Resolution 
+Upgrading Composer 0.16.x -> 0.17.x | INFO: Presently v0.16.x = 'latest' and v0.17.x = 'next' - when it comes to 'tag' names to append for npm install commands (see table at https://github.com/hyperledger/composer/wiki). Composer v0.17 (@next) in particular v0..17.3 onwards - works only with H/Fabric v1.1-alpha (docker images), so you will need to pull those docker containers (this is part of the Composer tools dev setup for "@next" environments). To work with v0.17.x environments (pulling the @next tagged images and clear up v0.16.x environments - these steps should help: 1.	Make backup (text file) copies of your model, acl, queries, transaction js etc. If you have exported your Network BNA file, then all the better 2.	Remove your 'old' Fabric (v1.0.x) docker images with the Fabric-tools script teardownFabric.sh 3.	uninstall existing composer code `npm uninstall -g composer-cli` (repeat for composer-rest-server and composer-playground as necessary) 4.	Remove the 'old' business network cards folder eg. rm -rf ~/.composer - again this is to removed old dev cards - be careful to save any `connection.json` metadata you created (if need be) for 0.16.x multi-machine environments that you've built - the connection profile format in v0.17.x is different to v0.16.x (but you can merge in your v0.16.x profile sections to conform to 0.17.x) see here for 0.17.x format -> https://hyperledger.github.io/composer/next/reference/connectionprofile.html 5.	Stop (using docker stop) and remove your old deployed 'chaincode' business network containers (ie v0.16.x) 
+|Upgrading Composer: from 0.17.0.[1-2] to >= 0.17.3 (ie .3 upwards ) | The main change is moving from Fabric (Docker) 'preview' to Fabric 'alpha' images (the latter is supported only from 0.17.3 onwards). Repeat the steps 1-4 above - your saved v0.17.x connection.json data should still work with the current Composer v0.17.x @next version installed. For step 5, you don't need to remove 'old' business network containers. Instead, you can do a `composer network upgrade` of your Composer runtime (earlier v0.17.x edition business network already installed on your peer(s) - this is because it is a micro-level (v0.17.x) release change of the runtime level already installed on the peer(s) and Composer supports upgrades of the runtime on micro releases changes.
 
 
 #### :card_index: [back to base camp :camping: ](#top)  

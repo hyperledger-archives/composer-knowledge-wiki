@@ -582,7 +582,7 @@ The following are a selection of answers, to help understand what you may be enc
 
 | Message encountered | Resolution 
 | :---------------------- | :-----------------------
-
+| Authentication Required | eg. Once the composer is started using admin/any cards you couldn't perform any operations. Fix: Enable multi user mode by supplying -m true in (this will enable authentication as well) and enable any of the passport authentication mechanism. (see here - https://hyperledger.github.io/composer/latest/reference/rest-server) 
 
 #### :card_index: [back to base camp :camping: ](#top)  
 

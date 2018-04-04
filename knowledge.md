@@ -341,8 +341,7 @@ More info on troubleshooting or understanding issues related to endorsement of t
 
 | Message encountered | Resolution 
 | :---------------------- | :-----------------------
-| How to listen for ALL events on eventHub? |`const evtListener = businessNetworkConnection.connection.eventHubs[0].registerChaincodeEvent('businessNetworkName', 'composer', (event) => {
-    console.log('Tx EVENT', event) })`
+| How to listen for ALL events on eventHub? |`const evtListener = businessNetworkConnection.connection.eventHubs[0].registerChaincodeEvent('businessNetworkName', 'composer', (event) => { console.log('Tx EVENT', event) })`
 | continued ...... |` process.on('exit', () => { businessNetworkConnection.connection.eventHubs[0].unregisterChaincodeEvent(evtListener)
 })`
 | continued ..... | this is a 'stopgap'' for 'System Events' (not application events you can program) - there will be an issue created to enable emission of 'System' type events such as Asset CRUD operations, to be added here when created (March 2018).

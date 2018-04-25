@@ -14,12 +14,12 @@ Our [**Tutorials**](https://hyperledger.github.io/composer/tutorials/tutorials.h
 
 | [**ACLs**](#acls) | [**Authorization Errors**](#authorization) | [**Angular**](#angular) | [**Blockchain Recap**](#recap) |[**Business Network Themes**](#biznet) 
 | :---------------------- | :-----------------------| :----------------------- | :-------------------- |:-----------------
-| [**Business Network Cards**](#bizcards) | [**Client APIs Usage**](#clientapis) | [**Cloud/Kubernetes envs**](#varcloud) | [**Composer Install Issues**](#installissues) |  [**Data Migration**](#migration) 
- [**Debugging**](#debug) | [**Endorsement Policy**](#endorse) | [**Events**](#events) | [**Event Hub Problems**](#eventhub) | [**Filters**](#filters)  
-|  [**Identity Issues**](#identity) | [**Historian**](#historian) | [**Modeling**](#model) | [**Miscellaneous Items**](#misccomposer) | [**Multi Org Setup/BYFN**](#multiorg)
-| [**Node / NVM Issues**](#node-issues) | [**NodeJS App Dev Qs**](#node-app) | [**Passport Strategies**](#passport-strategy) | [**Production Questions**](#production) | [**Queries & Query Issues**](#queries)  
-| [**REST APIs**](#restapis)  | [**REST Authentication**](#restauth) | [**Runtime Install Errors**](#runtime-install)| [**Sample Networks**](#samples) | [**Scripting Tips**](#scripting) 
-|[**Transaction Processors**](#transproc) | [**Upgrading Composer Runtime**](#upgrade) | [**Updating Biz Networks**](#upgradebn) | [**empty**](#samples)  | [**empty**](#samples) 
+| [**Business Network Cards**](#bizcards) | [**Client APIs Usage**](#clientapis) | [**Cloud/Kubernetes envs**](#varcloud) | [**Composer Install Issues**](#installissues) | [**Composer Network Start Issues**](#startissues) 
+| [**Data Migration**](#migration) | [**Debugging**](#debug) | [**Endorsement Policy**](#endorse) | [**Events**](#events) | [**Event Hub Problems**](#eventhub) 
+| [**Filters**](#filters)  |  [**Identity Issues**](#identity) | [**Historian**](#historian) | [**Modeling**](#model) | [**Miscellaneous Items**](#misccomposer) 
+| [**Multi Org Setup/BYFN**](#multiorg) | [**Node / NVM Issues**](#node-issues) | [**NodeJS App Dev Qs**](#node-app) | [**Passport Strategies**](#passport-strategy) | [**Production Questions**](#production) 
+| [**Queries & Query Issues**](#queries)  | [**REST APIs**](#restapis)  | [**REST Authentication**](#restauth) | [**Runtime Errors**](#runtime-install)| [**Sample Networks**](#samples) 
+| [**Scripting Tips**](#scripting) |[**Transaction Processors**](#transproc) | [**Upgrading Composer Runtime**](#upgrade) | [**Updating Biz Networks**](#upgradebn) | [**empty**](#samples) 
 
 
 Have Fabric Related issues? (ie when used with Composer Dev Env Setup or Tutorials)
@@ -282,6 +282,44 @@ Command failed
 #### :card_index: [back to base camp :camping: ](#top)
 
 
+<a name="startissues"></a>
+
+
+
+### :information_source:  Composer Network Start Issues
+
+
+More info on troubleshooting or understanding issues related Composer business network start issues, please see the table below for possible resolutions to the issue / problem you are seeing. There are several kinds of errors that could occur with a `composer network start` and will attempt to explain below.  All error messages usually start with "Error: No valid responses from any peers." - and the table below looks at the error following that line. 
+
+
+| Message encountered | Resolution 
+| :---------------------- | :----------------------- 
+| Error: 14 UNAVAILABLE: Connect Failed  | This error is a failure of Composer to connect to the Fabric, usually because the Fabric is not started. **Resolution:** Start the fabric - depending on how you started the Fabric, it may be necessary to repeat the `composer network install` command.
+| Error: 2 UNKNOWN: chaincode error (status: 500, Message: Unknown chaincodeType: NODE)  | This error is seen when using Composer v0.19 with an outdated Fabric v1.0.x.  Composer requires Fabric v1.1 GA.
+| continued.........  | To continue with Composer v0.19: 
+|  |1. stop and remove all Docker Containers for Fabric v1.0
+|  |2. if you are working with the Development Fabric, download a new version of Fabric Tools (From step 4 in this doc https://hyperledger.github.io/composer/latest/installing/development-tools.html  )
+| Error: 2 UNKNOWN: transaction returned with failure: ReferenceError: alert is not defined  | There is an error in the transaction logic JS script is this example a function called 'alert'. Transaction processing function cannot have 'include' or 'requires', nor include JS code that relies on Browser functionality will also fail.
+| Error: 2 UNKNOWN: chaincode error (status: 500, message: cannot get package for chaincode (test-network:0.0.2))  | The network start has failed for the particular network name and version specified.  This can occur because a composer network install has not been run, but it is more likely that there is a mismatch. Run the `composer archive list` command to see the **exact name** and **version** used in the .bna file. Remember that the version number must be changed and saved in the package.json. This error can also occur with the `composer network upgrade` command.
+||
+| Error: REQUEST_TIMEOUT  | As part of the Composer Network Start, Fabric tries to build a new chaincode Container which includes `npm install` commands. A **`REQUEST_TIMEOUT`** can occur with the failure to build the Chaincode containers for all peers within the default timeout period of 5 mins through lack of system resources or poor network connections.This can be a problem for the Multi-Org tutorial, but also for single peer installs. If you are using our simple Hyperledger Composer development server environment from composer-tools github repo, then you can add the following to the peer definition to see if it addresses the problem:
+| continued .... | CORE_CHAINCODE_STARTUPTIMEOUT=1200s in the file ~/fabric-tools/fabric-scripts/hlfv11/composer/docker-compose.yml eg, the above is a snippet from the peer definition. You would then have to do a `docker-compose stop` - then `docker-compose start` from that directory location to take effect. If you are using a more complex Fabric you will need to find the docker-compose files used to configure your Fabric and modify those. After modifying a docker-compose file it will be necessary to run the `startFabric.sh` script and re-run the `composer network install` command, and then finally the `composer network start` command.
+| continued .... | these Stack Overflow links may also shed further light https://stackoverflow.com/questions/49751259/error-in-starting-hyperledger-fabric-network-with-hyperledger-composer/49758354#49758354 and https://stackoverflow.com/questions/49290943/v0-18-1-error-cant-start-network
+||
+| Error: 2 UNKNOWN: error starting container: Failed to generate platform-specific docker build:  | As part of the Composer Network Start, Fabric tries to build a new chaincode Container which includes `npm install` commands.  This error is usually a Failure to build the container because of an underlying npm issue. 
+| continued .... | Using `docker logs <PEER Container Name>` will show if there are npm errors. Generally npm Warnings can be ignored - but serious errors such as "Error: getaddrinfo EAI_AGAIN nodejs.org:443" need to be resolved. The most common cause of the error is a corporate proxy or firewall preventing access outbound. More specifically, the need to include an npmrcFile as part of the `composer network start` sequence. These npm errors need to be fixed before a chaincode container can be successfully built.  You may recognise the problem and be immediately able to fix, but if not it is advisable to create a temporary container based on the same image that Composer uses.  Having a dedicated test container will be a fast way to identify and solve your local npm issues.  The following commands may help:
+|continued .... | Create a test container: `docker run -it --name npmtest --network composer_default  --entrypoint "/bin/sh" hyperledger/composer-cli` | When the container starts, install 'a' (a small npm package)    `npm install -g a`
+| continued .... | Errors with npm here need to be understood and resolved in this test container, then the same resolutions in an npmrc file should be passed to the Composer command. 
+| continued ... | Once resolved: (if you are running the Development Fabric with a single peer) you can now just re-run the `composer network start` command adding the npmrcFile option e.g.  `composer network install -c PeerAdmin@hlfv1 -a digitalproperty-network.bna -o npmrcFile=/tmp/npmrcFile`
+|continued ... | If you are running a more complex fabric, you may need to re-run the `composer network install` command.
+| |
+| Error: 2 UNKNOWN: chaincode error (status: 500, message: Authorization for INSTALL has been denied (error-Failed verifying that proposal's creator satisfies local MSP principal during channelless check policy with policy [Admins]: [This identity is not an admin])) | A business Network Card is being used with an ID that does not have Admin rights. For Composer, this can mean a 'PeerAdmin' card was NOT used, or the Card was created with incorrect certificates.
+
+
+
+#### :card_index: [back to base camp :camping: ](#top)
+
+
 <a name="migration"></a>
 
  
@@ -444,7 +482,7 @@ Some typical examples of historian related questions below:
 
 | Message Encountered / Question  | Answer/Resolution
 | :---------------------- | :-----------------------
-| Does Historian prevent 'false' / wrong transactions? | Historian records what was consensually agreed as the 'truth' - the whole point of the blockchain is to detect the 'poison' ?? If ledger data had been altered or corrupted on a peer then the transaction results would be inconsistent across endorsing peers, the 'bad' peer will be found out, and the application client can throw out the results from the bad peer before submitting the transaction for ordering/commit. If client application tries to submit a transaction with inconsistent endorsement regardless, this will be detected and the transaction will be invalidated by all peers at commit time.If there is doubt about state database integrity on a specific peer, the state database can be dropped and it will automatically get regenerated from the chain source of truth. If there is doubt about the chain integrity itself, then the peer itself will need to be rebuilt and the chain will be state transferred 
+| Does Historian prevent 'false' / wrong transactions? | Historian records what was consensually agreed as the 'truth' - the whole point of the blockchain is to detect tampering or the 'poison' in the network ?? If ledger data had been altered or corrupted on a peer during a transaction, then the transaction results would be inconsistent across endorsing peers, the 'bad' peer will be found out, and the application client can throw out the results from the bad peer before submitting the transaction for ordering/commit. If client application tries to submit a transaction with inconsistent endorsement regardless, this will be detected and the transaction will be invalidated by all peers at commit time.If there is doubt about state database integrity on a specific peer, the state database can be dropped and it will automatically get regenerated from the chain source of truth. If there is doubt about the chain integrity itself, then the peer itself will need to be rebuilt and the chain will be state transferred 
 
 
 
@@ -703,7 +741,7 @@ The following are a selection of answers, to help understand what you may be enc
 <a name="runtime-install"></a>
 
 
-### :information_source:  Runtime install errors (Composer)
+### :information_source:  Runtime errors (Composer)
 
 The following are a selection of answers, to help understand what you may be encountering - in some cases, multiple resolution choices may be offered:
 
@@ -711,10 +749,8 @@ The following are a selection of answers, to help understand what you may be enc
 | :---------------------- | :-----------------------
 | Error: No valid responses from any peers  | see below
 | Error: Error: Endpoint read failed |  This is likely to be a connection (.json) config issue -  it needs to be configured for TLS (or non-TLS if that's your setup) communications - depending on your desired configuration.
-| Error: Error: Error trying to ping. Error: Composer runtime (e.g 0.16.1) is not compatible with client (eg. 0.16.0) | You have a mismatch of versions. This could occur using Composer REST server, APIs, App Generator or CLI. Suggest to uninstall the relevant modules eg `composer uninstall -g composer-cli` (also `composer-rest-server`, `generator-hyperledger-composer`, `composer-playground` npm modules that you have installed - then `npm install -g` the same level - check [**release notes**](https://github.com/hyperledger/composer/releases/) for the current release level - ensure you do so as a non-privileged user.
-|Error: Error trying to instantiate composer runtime. Error: Error: Invalid results returned ::NOT_FOUND (1/2)| Has a `composer runtime install` been done? Which document/tutorial are you following? Have you forgotten to create/start the Fabric channel your BN profile is referring to ? Are you trying to run on Windows 7/10 ? Please check these and take appropriate action(s).
-|Error: Error trying to instantiate composer runtime. Error: Error: Invalid results returned ::NOT_FOUND (2/2)|Are the channel names correct? Do they match or are there different names specified for the channel in your Fabric config metadata / files vis-a-vis the channel name in the `connection.json` file (which is a constituent part of the .card file you're using for the composer CLI command) - this is often a reason / cause for the error you see.
-|Error: Failed to load composer module "composer-connector-undefined" for connection type "undefined"  | This occurs because you have a HLF v1.1 runtime environment (fabric v1.1-alpha containers) and composer runtime of 0.16.x - this will not work - please see the 'ready reckoner' table of 'which Composer version works with which Fabric version -> https://github.com/hyperledger/composer/wiki STEPS TO FIX so you can use Composer v0.16.x :  1) unset FABRIC_VERSION variable  2) npm uninstall -g composer-cli 3) npm uninstall -g composer-playground and other modules eg composer-rest-server 4) rm -rf $HOME/.composer 5) from fabric-tools run ./teardownFabric.sh 6) remove any lingering dev-xx business network containers you may previously have deployed (they are separate docker containers eg `docker stop xx` ; `docker rm xxx ` ) 7) npm install -g composer-cli as non-root user 8 ) rm -rf fabric-tools dir && mkdir fabric-tools dir 9) get newer fabric tools zip -> curl -O https://raw.githubusercontent.com/hyperledger/composer-tools/master/packages/fabric-dev-servers/fabric-dev-servers.zip && unzip fabric-dev-servers.zip inside fabric-tools 10) export FABRIC_VERSION=hlfv11 ; and from fabric-tools ./startFabric.sh ; ./createPeerAdminCard.sh 9) npm install -g composer-playground, composer-rest-server etc 10) then try composer runtime install -n mynetworkname -c PeerAdmin@hlfv1 and it should work - then you can proceed to do a `composer network start` command to instantiate a business network, as normal
+| Error: Error: Error trying to ping. Error: Composer runtime (e.g 0.19.x) is not compatible with client (eg. 0.18.x) | You have a mismatch of versions. This could occur using Composer REST server, APIs, App Generator or CLI. Suggest to uninstall the relevant modules eg `composer uninstall -g composer-cli` (also `composer-rest-server`, `generator-hyperledger-composer`, `composer-playground` npm modules that you have installed - then `npm install -g` the same level - check [**release notes**](https://github.com/hyperledger/composer/releases/) for the current release level - ensure you do so as a non-privileged user.
+|Error: Failed to load composer module "composer-connector-undefined" for connection type "undefined"  | This occurs because you have a HLF v1.1 runtime environment and still using a composer runtime of 0.16.x or 017.x - this will not work - please see the 'ready reckoner' table of 'which Composer version works with which Fabric version -> https://github.com/hyperledger/composer/wiki STEPS TO FIX so you can use Composer v0.16.x :  1) unset FABRIC_VERSION variable  2) npm uninstall -g composer-cli 3) npm uninstall -g composer-playground and other modules eg composer-rest-server 4) rm -rf $HOME/.composer 5) from fabric-tools run ./teardownFabric.sh 6) remove any lingering dev-xx business network containers you may previously have deployed (they are separate docker containers eg `docker stop xx` ; `docker rm xxx ` ) 7) npm install -g composer-cli as non-root user 8 ) rm -rf fabric-tools dir && mkdir fabric-tools dir 9) get newer fabric tools zip -> curl -O https://raw.githubusercontent.com/hyperledger/composer-tools/master/packages/fabric-dev-servers/fabric-dev-servers.zip && unzip fabric-dev-servers.zip inside fabric-tools 10) export FABRIC_VERSION=hlfv11 ; and from fabric-tools ./startFabric.sh ; ./createPeerAdminCard.sh 9) npm install -g composer-playground, composer-rest-server etc 10) then try composer runtime install -n mynetworkname -c PeerAdmin@hlfv1 and it should work - then you can proceed to do a `composer network start` command to instantiate a business network, as normal
 |[eventhub_producer] Chat -> ERRO 37f error during Chat, stopping handler: rpc error: code = Canceled desc = context canceled | The problem you are seeing is is likely because the identity you are using to try to install the runtime onto a peer is not authorised to do so. Unfortunately the logs info from Fabric don't indicate this . If you are using the Composer development server then it creates an identity for you called PeerAdmin which you should use to deploy business networks. If you are using your own fabric then you need to look into how to import crypto material when building a peer administrator card and for which it has the PeerAdmin role to do so. Or are you following this tutorial ? https://hyperledger.github.io/composer/tutorials/deploy-to-fabric-single-org
 
 #### :card_index: [back to base camp :camping: ](#top)  

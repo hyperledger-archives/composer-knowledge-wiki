@@ -14,7 +14,7 @@ Our [**Tutorials**](https://hyperledger.github.io/composer/tutorials/tutorials.h
 
 | [**ACLs**](#acls) | [**Authorization Errors**](#authorization) | [**Angular**](#angular) | [**Blockchain Recap**](#recap) |[**Business Network Themes**](#biznet) 
 | :---------------------- | :-----------------------| :----------------------- | :-------------------- |:-----------------
-| [**Business Network Cards**](#bizcards) | [**Client APIs Usage**](#clientapis) | [**Cloud/Kubernetes envs**](#varcloud) | [**Composer Install Issues**](#installissues) |  [**Data Migration**](#migration) 
+| [**Business Network Cards**](#bizcards) | [**Client APIs Usage**](#clientapis) | [**Cloud/Kubernetes envs**](#varcloud) | [**Composer Install Issues**](#installissues) | [**Composer Network Start Issues**](#startissues) | [**Data Migration**](#migration) 
  [**Debugging**](#debug) | [**Endorsement Policy**](#endorse) | [**Events**](#events) | [**Event Hub Problems**](#eventhub) | [**Filters**](#filters)  
 |  [**Identity Issues**](#identity) | [**Historian**](#historian) | [**Modeling**](#model) | [**Miscellaneous Items**](#misccomposer) | [**Multi Org Setup/BYFN**](#multiorg)
 | [**Node / NVM Issues**](#node-issues) | [**NodeJS App Dev Qs**](#node-app) | [**Passport Strategies**](#passport-strategy) | [**Production Questions**](#production) | [**Queries & Query Issues**](#queries)  
@@ -278,6 +278,41 @@ More info on the kinds of debugging, logging and Editor breakpoint setting is sh
 |Error: Failed to load connector module "composer-connector-hlfv1" for connection type "hlfv1".   | "I installed Composer Playground on my Linux environment and am trying to deploy a sample perishable-network, but am getting the following error when deploying,  Cannot find module '/usr/lib/node_modules/composer-playground/node_modules/grpc/src/node/extension_binary/node-v59-linux-x64/grpc_node.node'-Cannot find module '/usr/lib/node_modules/composer-connector-hlfv1' - RESOLUTION: its likely the user installed Composer as 'root' or used 'sudo' - uninstalled node and npm as root - and then following these directions, https://docs.npmjs.com/getting-started/installing-node to reinstall it. Then, follow the directions to install Composer here, https://hyperledger.github.io/composer/installing/development-tools.html. The key is to not use 'su' or 'sudo' - as the instructions clearly state :-)
 | Error: Failed to load connector module "composer-connector-hlfv1" for connection type "hlfv1". Unexpected identifier-Unexpected identifier-Unexpected identifier-Unexpected identifier-Unexpected identifier-Unexpected identifier-Unexpected identifier-Unexpected identifier-Unexpected identifier-Unexpected identifier-Unexpected identifier | RESOLUTION: Its likely the user has used Node 5/6 - they need to switch to Node 8.9.x (using NVM to switch or uninstall node 5/6 and re-install with node 8.9 if required).
 Command failed
+
+#### :card_index: [back to base camp :camping: ](#top)
+
+
+<a name="startissues"></a>
+
+### :information_source:  Composer Network Start Issues
+
+
+More info on troubleshooting or understanding issues related Composer business network start issues, please see the table below for possible resolutions to the issue / problem you are seeing. There are several kinds of errors that could occur with a `composer network start` and will attempt to explain below.  All error messages usually start with "Error: No valid responses from any peers." - and the table below looks at the error following that line. 
+
+
+| Message encountered | Resolution 
+| :---------------------- | :----------------------- 
+| :---------------------- | :-----------------------
+| Error: 14 UNAVAILABLE: Connect Failed  | This error is a failure of Composer to connect to the Fabric, usually because the Fabric is not started. **Resolution:** Start the fabric - depending on how you started the Fabric, it may be necessary to repeat the `composer network install` command.
+| Error: 2 UNKNOWN: chaincode error (status: 500, Message: Unknown chaincodeType: NODE)  | This error is seen when using Composer v0.19 with an outdated Fabric v1.0.x.  Composer requires Fabric v1.1 GA.
+| continued.........  | To continue with Composer v0.19: 
+| |1. stop and remove all Docker Containers for Fabric v1.0
+| |2. if you are working with the Development Fabric, download a new version of Fabric Tools (From step 4 in this doc https://hyperledger.github.io/composer/latest/installing/development-tools.html  )
+| Error: 2 UNKNOWN: transaction returned with failure: ReferenceError: alert is not defined  | There is an error in the transaction logic JS script is this example a function called 'alert'. Transaction processing function cannot have 'include' or 'requires', nor include JS code that relies on Browser functionality will also fail.
+| Error: 2 UNKNOWN: chaincode error (status: 500, message: cannot get package for chaincode (test-network:0.0.2))  | The network start has failed for the particular network name and version specified.  This can occur because a composer network install has not been run, but it is more likely that there is a mismatch. Run the `composer archive list` command to see the **exact name** and **version** used in the .bna file. Remember that the version number must be changed and saved in the package.json. This error can also occur with the `composer network upgrade` command.
+| Error: REQUEST_TIMEOUT  | As part of the Composer Network Start, Fabric tries to build a new chaincode Container which includes `npm install` commands. A **`REQUEST_TIMEOUT`** can occur with the failure to build the Chaincode containers for all peers within the default timeout period of 5 mins through lack of system resources or poor network connections.This can be a problem for the Multi-Org tutorial, but also for single peer installs. If you are using our simple Hyperledger Composer development server environment from composer-tools github repo, then you can add the following to the peer definition to see if it addresses the problem:
+| continued .... | CORE_CHAINCODE_STARTUPTIMEOUT=1200s in the file ~/fabric-tools/fabric-scripts/hlfv11/composer/docker-compose.yml eg, the above is a snippet from the peer definition. You would then have to do a `docker-compose stop` - then `docker-compose start` from that directory location to take effect. If you are using a more complex Fabric you will need to find the docker-compose files used to configure your Fabric and modify those. After modifying a docker-compose file it will be necessary to run the `startFabric.sh` script and re-run the `composer network install` command, and then finally the `composer network start` command.
+| continued .... | these Stack Overflow links may also shed further light https://stackoverflow.com/questions/49751259/error-in-starting-hyperledger-fabric-network-with-hyperledger-composer/49758354#49758354 and https://stackoverflow.com/questions/49290943/v0-18-1-error-cant-start-network
+| Error: 2 UNKNOWN: error starting container: Failed to generate platform-specific docker build:  | As part of the Composer Network Start, Fabric tries to build a new chaincode Container which includes `npm install` commands.  This error is usually a Failure to build the container because of an underlying npm issue. 
+| continued .... | Using `docker logs <PEER Container Name>` will show if there are npm errors. Generally npm Warnings can be ignored - but serious errors such as "Error: getaddrinfo EAI_AGAIN nodejs.org:443" need to be resolved. The most common cause of the error is a corporate proxy or firewall preventing access outbound. More specifically, the need to include an npmrcFile as part of the `composer network start` sequence. These npm errors need to be fixed before a chaincode container can be successfully built.  You may recognise the problem and be immediately able to fix, but if not it is advisable to create a temporary container based on the same image that Composer uses.  Having a dedicated test container will be a fast way to identify and solve your local npm issues.  The following commands may help:
+|continued .... | Create a test container: `docker run -it --name npmtest --network composer_default  --entrypoint "/bin/sh" hyperledger/composer-cli` | When the container starts, install 'a' (a small npm package)    `npm install -g a`
+| continued .... | Errors with npm here need to be understood and resolved in this test container, then the same resolutions in an npmrc file should be passed to the Composer command. 
+| continued ... | Once resolved: (if you are running the Development Fabric with a single peer) you can now just re-run the `composer network start` command adding the npmrcFile option e.g.  `composer network install -c PeerAdmin@hlfv1 -a digitalproperty-network.bna -o npmrcFile=/tmp/npmrcFile`
+|continued ... | If you are running a more complex fabric, you may need to re-run the `composer network install` command.
+| |
+| Error: 2 UNKNOWN: chaincode error (status: 500, message: Authorization for INSTALL has been denied (error-Failed verifying that proposal's creator satisfies local MSP principal during channelless check policy with policy [Admins]: [This identity is not an admin])) | A business Network Card is being used with an ID that does not have Admin rights. For Composer, this can mean a 'PeerAdmin' card was NOT used, or the Card was created with incorrect certificates.
+
+
 
 #### :card_index: [back to base camp :camping: ](#top)
 

@@ -272,6 +272,12 @@ More info on the kinds of debugging, logging and Editor breakpoint setting is sh
 
 | Message encountered | Resolution 
 | :---------------------- | :-----------------------
+| Failed to install Composer (1) eg `Error: Cannot find module './api'` or | see below
+| "No version of composer-cli has been detected, you need to install composer-cli at v0.19 or higher" (2) or | see below
+| composer not found from CLI (3)  ..| We are 'at pains' to recommend you do not used privileged user access (ie using root / sudo) to do the **Composer** installation.  Using sudo or root do not work well with npm installs and installs of native node modules. If you review the install output, amongst other errors, you may see some about `node-gyp` - ie about being unable to compile the native modules.  We furthermore recommend that you use nvm to install node.js and to manage your node versions - our recommended Node version is currently 8.9.x **only**. For NVM - see https://github.com/creationix/nvm#installation it installs it (NVM) for the current user and you do not need root or sudo (note, the prereqs install script itself,  may use sudo for a few commands - ie its installing non-Composer pre-requisite modules that require sudo elevation). Once nvm is installed as an ordinary, unprivileged user, follow the sequence below
+| continued .... | 1) `nvm install v8.9.5  `  2) `nvm use 8.9.5`    - telling nvm to use npm 8.9.5     3) `npm install -g  composer-cli`
+| Cannot execute ./PeerAdminCard.sh successfully | See https://stackoverflow.com/questions/50039532/cannot-install-hyperledger-composer-cli or https://stackoverflow.com/questions/49847420/hyperledger-composer-install-is-not-installing-business-network
+| continued .... | It could be for a number of reasons 1) still running an older 0.16.x / 0.17.x but you pulled a later Composer fabric-tools  and/or using a non Fabric 1.1 GA set of fabric docker images- see here https://stackoverflow.com/questions/48694060/unable-to-create-peeradmincard 2) need to clear out old cards in your cardstore / wallet using composer card delete and check its empty with composer card list 3) failed to install composer correctly (eg. inadvertently used `npm install composer-cli` when it should be `npm install -g composer-cli` . 4) Finally more info on what the PeerAdmin card is / does here https://stackoverflow.com/questions/49962051/what-admin-peer-can-do-in-hyperledger-composer
 | npm install errors on install Composer (option 1) |Follow the best practices here https://docs.npmjs.com/getting-started/fixing-npm-permissions including recommendation to install  a Node Version Manager (install NVM then use that to manage Node installs)
 | npm install errors on installing Composer (option 2) | 1. INSTALLING COMPOSER AS A NON-PRIVILEGED USER - IE NON-ROOT.     Ideally, when you install composer modules globally (eg. composer-cli) you should install using a designated, non-root user. If there are issues (eg, on Ubuntu with permissions to write/update node directories located in system directories like /usr/local) - the solution is perform the npm install to a directory you have access to - rather than resort to root or superuser access, as this is not good practice. Here is what to do to set the npm prefix to a given directory, ...
 | ..continued .... | `npm config set prefix /home/myuser/` In this case, global binaries are placed in /home/myuser/bin which is in your PATH, and the modules are placed in /home/myuser/lib ... This is a method to do all the 'global' installs as non-root
@@ -760,7 +766,7 @@ The following are a selection of answers, to help understand what you may be enc
 
 ### :information_source:  Composer Sample Networks/Applications/Models
 
-The links to our Sample Networks/Applicaions are provided below - to clone it simply do a `git clone https://github.com/hyperledger/composer-sample-networks.git` from the command line or from the same Github repo in a browser.
+The links to our Sample Networks/Applications are provided below - to clone it simply do a `git clone https://github.com/hyperledger/composer-sample-networks.git` from the command line or from the same Github repo in a browser.
 
 | Description | Link
 | ----------- | ---------
@@ -781,6 +787,20 @@ The following are a selection of answers, to help understand what you may be enc
 | Message encountered | Resolution 
 | :---------------------- | :-----------------------
 | would like to convert JSON object to JSON string (or vice versa) in TP function. How can I do this? eg JSON.parse and JSON.stringify?| some examples here for you -> https://stackoverflow.com/questions/46686996/search-for-an-specific-asset-inside-a-transaction/46959640#46959640 and JSON.parse -> https://stackoverflow.com/questions/46185606/would-like-to-upload-json-format-datafile-into-hyperledger-composer-asset-regist
+| how to use isExists ? | see https://hyperledger.github.io/composer/latest//jsdoc/module-composer-runtime.AssetRegistry.html#exists__anchor ...it returns a promise ... is resolved with a boolean of true if the specified asset exists in the asset registry, etc etc eg 
+||  // Get the vehicle asset registry.  
+|| return getAssetRegistry('org.example.Vehicle')
+||  .then(function (vehicleAssetRegistry) {
+||   // Determine if the specific vehicle exists in the vehicle asset registry.
+||    return assetRegistry.exists('VEHICLE_1');
+|| })
+||  .then(function (exists) {
+||    // Process the the boolean result.
+||   console.log('Vehicle exists', exists);
+|| })
+||  .catch(function (error) {
+||    // Add optional error handling here.
+||  }
 
 
 #### :card_index: [back to base camp :camping: ](#top)  

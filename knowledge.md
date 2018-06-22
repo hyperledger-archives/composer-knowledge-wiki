@@ -88,7 +88,7 @@ The following are a selection of answers, to help understand what you may be enc
 |  | 4. org.acme.perishable.**  all resources and everything under that namespace (recursive)
 | Controlling access to a particular field |currently not possible for property (field) based access control in ACL runtime -> https://github.com/hyperledger/composer/issues/983 
 | ..(continued ..) | If your singular field control relateds to 'authorisation' (who's allowed to see a particular asset) you can maybe store a hash of the authorised list (of participants allowed) in an array eg. `String[] Authorised optional` then a rule something like 
-| ..(continued ..) | rule sampleRule {    description: "only allowed users"    participant(p): "org.acme.model.Participant"    operation: ALL    resource(r): "org.acme.model.Asset"    condition: ( ( r.Authorised.indexOf(hashCode(p.getIdentifier()) > -1 ) || p.getIdentifier() === r.owner.getIdentifier()    action: ALLOW    where `hashCode` is a function defined in a script file in js directory .... and `owner` is a relationship field to the participant
+| ..(continued ..) | rule sampleRule {    description: "only allowed users"    participant(p): "org.acme.model.Participant"    operation: ALL    resource(r): "org.acme.model.Asset"    condition: ( ( r.Authorised.indexOf(hashCode(p.getIdentifier()) > -1 ) || p.getIdentifier() === r.owner.getIdentifier()    action: ALLOW    where `hashCode` is a function (see below) defined in a script file in js directory .... and `owner` is a relationship field to the participant. To get a hash, you have two options or 1) if you want something simpler, write a JS function and call it in your TP eg such as  `function hashCode(str) {   return str.split('').reduce((prevHash, currVal) => (((prevHash << 5) - prevHash) + currVal.charCodeAt(0))|0, 0); }` and you can `console.log` it to check eg. `console.log('hashcode is ' +  hashCode('Hello!') );` ... ps. cannot use `includes` or `requires` in TP functions or 2) make a call-out `request.get()` from a service to generate the hash for you as described here 
 |ACL to get the registry name to compare against - eg. participant of certain type is ALLOWED/DENIED | `rule DenyProviderAccessToConsumer { description: "Disallow Provider -> Consumer"     participant(p): "org.acme.biznet.Provider"     operation: ALL     resource(r): "org.acme.biznet.Account"    condition: (r.owner.getFullyQualifiedType() == "org.acme.biznet.Consumer")       action: DENY }`
 
 
@@ -223,6 +223,67 @@ Firstly, its to do with 'roles' that FABRIC lays down - so **admin** (in the sam
 | Message/Issue encountered | Resolution 
 | :---------------------- | :-----------------------
 | Programmatic Issue, upload and import card to wallet / std HTTP or using react and the axios http library or  | see this snippet https://pastebin.com/ST684NCw or see Caroline Church blog -> https://medium.com/@CazChurchUk/developing-multi-user-application-using-the-hyperledger-composer-rest-server-b3b88e857ccc
+| End to End code example ; issue identity, import card, then export the Card to a .card file |  See example below..
+    createCard(meta: Metadata, businessNetwork: string, profilePath: string){
+    
+    let BusNetworkConnection = new BusinessNetworkConnection();
+    let adminConnection = new AdminConnection();
+    try {
+         (async function createIdentity(meta, busnetwork, profilePath: string){
+          await BusNetworkConnection.connect(meta.adminCard);
+     
+          //issue identity
+          const result = await BusNetworkConnection.issueIdentity(`${meta.participantSignature}#${meta.participantId}`, meta.userName);
+          console.log(`userID = ${result.userID}`);
+          console.log(`userSecret = ${result.userSecret}`);
+
+          //import card
+          const metadataForCard = {version: 1, userName: result.userID, enrollmentSecret: result.userSecret, businessNetwork: businessNetwork};
+          
+            let data: any = fs.readFileSync(path.join(HOME, '/middleware/', profilePath), 'UTF-8');
+            data = JSON.parse(data);
+            
+         
+            const idCardData: any = await new IdCard(metadataForCard, data);
+
+            const idCardName: string = await BusinessNetworkCardStore.getDefaultCardName(idCardData);
+
+            const imported = await adminConnection.importCard(idCardName, idCardData);
+            await BusNetworkConnection.connect(idCardName);
+
+            let pingresult = await BusNetworkConnection.ping();
+            console.log(`participant = ${pingresult.participant ? pingresult.participant : '<no participant found>'}`);
+            let exportedCard: any = await adminConnection.exportCard(idCardName);
+        
+            var credentials = {certificate: exportedCard.credentials.certificate, privateKey: exportedCard.credentials.privateKey};   
+                 
+            idCardData.setCredentials(credentials);
+                   
+            writeCardToFile(idCardName, idCardData);
+                  
+            BusNetworkConnection.disconnect();
+            })(meta, businessNetwork, profilePath)     
+       } catch(error) {
+           console.log(error);
+       }
+
+        async function writeCardToFile(cardFileName: string, card: any) {
+        
+          let cardBuffer: any = await card.toArchive({ type: 'nodebuffer' })
+           
+               // got the id card to write to a buffer
+               let cardFilePath: any = path.resolve(cardFileName);
+              
+                   fs.writeFile(cardFilePath, cardBuffer, (err: any)=>{
+                      if (err) console.log(`Unable to write card file: ${cardFilePath} \n ${err}`)
+                      console.log(`Card ${cardFileName} successfully created`);
+                   });                  
+        }
+              
+    };
+
+| Message/Issue encountered | Resolution 
+| :---------------------- | :-----------------------
 | How to issue identities / create cards via JS APIs: Examples for issuing participants, identities and importing  | We have an issue https://github.com/hyperledger/composer/issues/3088 as the docs are not updated yet with examples. You can refer to the source for composer identity issue to see how it calls BusinessNetworkConnection.issueIdentity (as an admin with authority to issue identities) and creates a business network card from the result:-> https://github.com/hyperledger/composer/blob/master/packages/composer-cli/lib/cmds/identity/lib/issue.js#L46 and also another answer at the bottom here -> https://stackoverflow.com/questions/47393096/nodejs-test-hyperledger-composer-v0-15-fails-with-error-card-not-found-peeradm/47417082#47417082 (albeit with MemoryCardStore being replaced by FileSystemCardStore). This blog is also useful -> https://medium.com/@aniketengg.225/hyperledger-composer-issue-identity-import-card-7e07af378447
 | How to switch BN cards using JS APIs | `const BusinessNetworkConnection = require('composer-client').BusinessNetworkConnection;  let businessNetworkConnection = new BusinessNetworkConnection();   return businessNetworkConnection.connect('lenny@digitalPropertyNetwork')  .then(() => { .........blah blah do something ; } return businessNetworkConnection.disconnect(); <switch to next card>` See also example of `useIdentity` here -> https://github.com/hyperledger/composer-sample-networks/blob/master/packages/pii-network/test/pii.js#L168
 | Issue Identity and use Card | Issue identity, import card, connect to the business network using the card `businessNetworkConnection.issueIdentity(NS + '#' + userData.id, userData.user); ....  var userCard = new IdCard({...});  userCard.setCredentials(credentials); ...  adminConnection.importCard(userCardName, userCard); .... .then(() => {     // Connect to the business network using the network admin identity ...     businessNetworkConnection = new BusinessNetworkConnection({ cardStore: cardStore });   businessNetworkConnection.connect(userCardName); } ...`
@@ -301,7 +362,7 @@ More info on troubleshooting or understanding issues related Composer business n
 
 | Message encountered | Resolution 
 | :---------------------- | :----------------------- 
-| Error: 14 UNAVAILABLE: Connect Failed  | This error is a failure of Composer to connect to the Fabric, usually because the Fabric is not started. **Resolution:** Start the fabric - depending on how you started the Fabric, it may be necessary to repeat the `composer network install` command.
+| Error: 14 UNAVAILABLE: Connect Failed  | This error is a failure of Composer to connect to the Fabric. In particular, the _Error: 14 UNAVAILABLE: Connect Failed_ (which comes back quickly) and is a failure of the client (or CLI in this case) to find the Fabric at the addresses specified in the `connection.json` file - or even because the Fabric is not started. **Resolution:** Start the fabric and ensure all the containers have full DNS / docker resolution - depending on how you started the Fabric, it may be necessary to repeat the `composer network install` command.
 | Error: 2 UNKNOWN: chaincode error (status: 500, Message: Unknown chaincodeType: NODE)  | This error is seen when using Composer v0.19 with an outdated Fabric v1.0.x.  Composer requires Fabric v1.1 GA.
 | continued.........  | To continue with Composer v0.19: 
 |  |1. stop and remove all Docker Containers for Fabric v1.0
@@ -309,17 +370,16 @@ More info on troubleshooting or understanding issues related Composer business n
 | Error: 2 UNKNOWN: transaction returned with failure: ReferenceError: alert is not defined  | There is an error in the transaction logic JS script is this example a function called 'alert'. Transaction processing function cannot have 'include' or 'requires', nor include JS code that relies on Browser functionality will also fail.
 | Error: 2 UNKNOWN: chaincode error (status: 500, message: cannot get package for chaincode (test-network:0.0.2))  | The network start has failed for the particular network name and version specified.  This can occur because a composer network install has not been run, but it is more likely that there is a mismatch. Run the `composer archive list` command to see the **exact name** and **version** used in the .bna file. Remember that the version number must be changed and saved in the package.json. This error can also occur with the `composer network upgrade` command.
 ||
-| Error: REQUEST_TIMEOUT  | As part of the Composer Network Start, Fabric tries to build a new chaincode Container which includes `npm install` commands. A **`REQUEST_TIMEOUT`** can occur with the failure to build the Chaincode containers for all peers within the default timeout period of 5 mins through lack of system resources or poor network connections.This can be a problem for the Multi-Org tutorial, but also for single peer installs. If you are using our simple Hyperledger Composer development server environment from composer-tools github repo, then you can add the following to the peer definition to see if it addresses the problem:
+| Error: REQUEST_TIMEOUT fail to compile BN container using the std npm registry  | As part of the Composer Network Start, Fabric tries to build a new chaincode Container which includes `npm install` commands. A **`REQUEST_TIMEOUT`** can occur with the failure to build the Chaincode containers for all peers within the default timeout period of 5 mins through lack of system resources or poor network connections.This can be a problem for the Multi-Org tutorial, but also for single peer installs. If you are using our simple Hyperledger Composer development server environment from composer-tools github repo, then you can add the following to the peer definition to see if it addresses the problem:
 | continued .... | CORE_CHAINCODE_STARTUPTIMEOUT=1200s in the file ~/fabric-tools/fabric-scripts/hlfv11/composer/docker-compose.yml eg, the above is a snippet from the peer definition. You would then have to do a `docker-compose stop` - then `docker-compose start` from that directory location to take effect. If you are using a more complex Fabric you will need to find the docker-compose files used to configure your Fabric and modify those. After modifying a docker-compose file it will be necessary to run the `startFabric.sh` script and re-run the `composer network install` command, and then finally the `composer network start` command.
-| continued .... | these Stack Overflow links may also shed further light https://stackoverflow.com/questions/49751259/error-in-starting-hyperledger-fabric-network-with-hyperledger-composer/49758354#49758354 and https://stackoverflow.com/questions/49290943/v0-18-1-error-cant-start-network
-||
+| continued .... | these Stack Overflow links may also shed further light https://stackoverflow.com/questions/49751259/error-in-starting-hyperledger-fabric-network-with-hyperledger-composer/49758354#49758354 and https://stackoverflow.com/questions/49290943/v0-18-1-error-cant-start-network and sample entry looks like this in the YAML file is shown [here](https://github.com/hyperledger/composer/issues/3731#issuecomment-380096851)
+|Error: REQUEST_TIMEOUT using verdaccio-based 'local' npm registry | see https://github.com/hyperledger/composer/issues/3731#issuecomment-387600862 for resolution of doing a `composer network install` followed by `composer network start` using a specific npm.yaml file (for verdaccio repository) and an npmConfig.txt (ie `npmrcFile=npmConfig.txt`) to pass to the `composer network install` command 
 | Error: 2 UNKNOWN: error starting container: Failed to generate platform-specific docker build:  | As part of the Composer Network Start, Fabric tries to build a new chaincode Container which includes `npm install` commands.  This error is usually a Failure to build the container because of an underlying npm issue. 
 | continued .... | Using `docker logs <PEER Container Name>` will show if there are npm errors. Generally npm Warnings can be ignored - but serious errors such as "Error: getaddrinfo EAI_AGAIN nodejs.org:443" need to be resolved. The most common cause of the error is a corporate proxy or firewall preventing access outbound. More specifically, the need to include an npmrcFile as part of the `composer network start` sequence. These npm errors need to be fixed before a chaincode container can be successfully built.  You may recognise the problem and be immediately able to fix, but if not it is advisable to create a temporary container based on the same image that Composer uses.  Having a dedicated test container will be a fast way to identify and solve your local npm issues.  The following commands may help:
 |continued .... | Create a test container: `docker run -it --name npmtest --network composer_default  --entrypoint "/bin/sh" hyperledger/composer-cli` | When the container starts, install 'a' (a small npm package)    `npm install -g a`
 | continued .... | Errors with npm here need to be understood and resolved in this test container, then the same resolutions in an npmrc file should be passed to the Composer command. 
 | continued ... | Once resolved: (if you are running the Development Fabric with a single peer) you can now just re-run the `composer network start` command adding the npmrcFile option e.g.  `composer network install -c PeerAdmin@hlfv1 -a digitalproperty-network.bna -o npmrcFile=/tmp/npmrcFile`
 |continued ... | If you are running a more complex fabric, you may need to re-run the `composer network install` command.
-| |
 | Error: 2 UNKNOWN: chaincode error (status: 500, message: Authorization for INSTALL has been denied (error-Failed verifying that proposal's creator satisfies local MSP principal during channelless check policy with policy [Admins]: [This identity is not an admin])) | A business Network Card is being used with an ID that does not have Admin rights. For Composer, this can mean a 'PeerAdmin' card was NOT used, or the Card was created with incorrect certificates.
 
 
@@ -446,7 +506,44 @@ The following are a selection of answers, to help understand what you may be enc
 
 The syntax examples below are Loopback Filter syntax FYI
 
-Examples of stringified JSON Filters 
+Examples of Filters for Data (plain fields - non-relationship)
+
+| Filter Type  | Example
+| :---------------------- | :-----------------------
+| Stringified filter | filter={where: {"UserId":"User1"}   (note: remove `filter=` when pasting into the browser REST API filter field)
+
+eg. `curl -g -X GET 'http://localhost:3000/api/User?filter={where:{"UserId":"User1"} `
+
+| Filter Type  | Example
+| :---------------------- | :-----------------------
+| Non-stringified filter | filter[where][UserId]=User1     (note: cannot use non-stringified in the browser REST API filter)
+
+eg. `curl -g -X GET 'http://localhost:3000/api/User?filter[include]=resolve&filter[where][UserId]=CC'`
+
+
+
+
+Examples of Filters for Data (relationship data)
+
+| Filter Type  | Example
+| :---------------------- | :-----------------------
+| Stringified loopback filter |  `filter={"where":{"UserId":"resource:org.acme.biznet.User%23T01'}}`
+| Non-Stringified loopback filter | `filter[where][UserId]=resource:org.acme.biznet.User%23T01`
+eg. 
+`curl -g -X GET  'http://localhost:3000/api/User?filter={"where":{"UserId":"resource:org.acme.biznet.User%23T01"}}'`
+
+Examples of Filters for Data (relationship data and with include / resolves) 
+
+| Filter Type  | Example
+| :---------------------- | :-----------------------
+|Example 1 - Stringified |`curl -g -X GET  'http://localhost:3000/api/User?filter={"where":{"UserId":"resource:org.acme.biznet.User%23T01"},"include":"resolve"}'`
+|Example 2 - Non-Stringified |`curl -g -X GET 'http://localhost:3000/api/User?filter[include]=resolve&filter[where][UserId]=resource:org.acme.biznet.User%23T01' `
+`
+Note that %23 is the ascii for '#' (using CURL) and -g is not to interpret braces, and T01 is my User id FYI). –
+
+eg `curl -g -X GET --header 'Accept: application/json' 'http://localhost:3000/api/User?filter={"where":{"UserId":"resource:org.acme.biznet.User%23T01"},"include":"resolve"}' `
+
+Examples of multi-condition (criteria) stringified JSON Filters 
 
 | Filter Type  | Example
 | :---------------------- | :-----------------------
@@ -691,7 +788,7 @@ The following are a selection of answers, to help understand what you may be enc
 | ORDER BY (single) not working | for a single `ORDER BY` field you may be hitting this index issue  (you need to define an index) -> https://stackoverflow.com/questions/45919898/order-by-not-working-in-named-query/45966828#45966828 
 |Indexes at the cto file level, in terms of composer concepts | Reliant on Fabric to provide the capability, before Composer is involved: see https://jira.hyperledger.org/browse/FAB-3067
 | ORDER BY (multiple) not working | Not supported presently. Multiple ORDER BY fields is a current limitation of CouchDB see here -> https://github.com/hyperledger/composer/issues/1640 
-| LIMIT/SKIP operators not working | LIMIT/SKIP support is blocked by Fabric presently as described here -> https://github.com/hyperledger/composer/issues/1015
+| LIMIT/SKIP operators not working | CouchDB query interators do not support pagination currently, so LIMIT/SKIP support is blocked by Fabric presently as described here -> https://github.com/hyperledger/composer/issues/1015 . There is work afoot in Fabric to address pagination options - discussion here ->  https://jira.hyperledger.org/browse/FAB-2809?page=com.atlassian.jira.plugin.system.issuetabpanels%3Acomment-tabpanel&showAll=true
 | Error: Use Serializer.toJSON to convert resources | you need to do serialize the results of a query to work in the TP - see example should help you -> https://stackoverflow.com/questions/46686996/search-for-an-specific-asset-inside-a-transaction
 |Query Historian for history of created Assets | the attribute `targetRegistry` is a field available to `transaction` (from `transactionInvoked` from the system transaction registry class eg. `org.hyperledger.composer.system.AddAsset` - see here https://github.com/hyperledger/composer/blob/master/packages/composer-common/lib/system/org.hyperledger.composer.system.cto#L114 - so you can query the AddAsset class and match on the target Asset Registry (eg 'BankAccount' asset) type eg something like `SELECT org.hyperledger.composer.system.AddAsset WHERE targetRegistry == 'resource:org.hyperledger.composer.system.AssetRegistry#org.acme.account.BankAccount' `
 | Query an array element  |see CONTAINS below - Contains works where you supply value(s) (one of) in the list provided in a StringArray
@@ -701,6 +798,16 @@ The following are a selection of answers, to help understand what you may be enc
 |CONTAINS Example 4: multi-field Concept with 'OR' example |Given data of `{ "$class": "org.acme.trading.CAsset",   "c": "Asset1",   "someConceptArray": [ { $class": "org.acme.trading.someConcept", "name": "Varun", "desc": "test1" } ] }`
 |CONTAINS Example 4: continued .... |Query to find a value in either 'name' or 'desc' fields -> `query CQuery2 { description: "Select all Cs"  statement: SELECT org.acme.trading.ConceptAsset  WHERE (someConceptArray CONTAINS (name == "Varun") OR (desc == "test1") ) }` and where the model specifies the field (on an asset) as of type concept array `o someConcept[] someConceptArray`
 |CONTAINS Example 5: Query the fields of an EventEmitted array (which has a concept) | chat.hyperledger.org/channel/composer?msg=se8AS3bDAuWaCjy84) programmatically, see Stack Overflow -> https://stackoverflow.com/questions/49104387/how-to-access-the-eventemitted-field-in-transaction-history-of-hyperledger-fab - or in a query definition, normally you would use CONTAINS to search in an array field. I tried this `query eventQuery {   description: "Select all events in history containing a certain Event ID"  statement:     SELECT org.hyperledger.composer.system.HistorianRecord   WHERE ( eventsEmitted CONTAINS  ( eventId == "678cb4d1-b687-4c58-8067-de9ec9be3bbf#0") ) }`  (eventId is a standard field on the event emitted - but you could use your event field)
+|How to navigate the different, system `targetRegistry` transaction classes that affect an asset ? | would need a query for each system transaction class registry (not just BN based classes) eg.  `'testquery' = `SELECT org.hyperledger.composer.system.AddAsset WHERE targetRegistry == 'resource:org.hyperledger.composer.system.AssetRegistry#org.acme.trading.House` (say) - you can try this to access the asset ids as follows 
+| continued .... |  `return query('testquery')`
+||   .then(function (results) {
+||           for (var n = 0; n < results.length; n++) {
+||                   var txn = results[n];
+||                   console.log('trxn identifier is: ' + txn.getIdentifier()); // 4bd69db-d4e5-4587-b427-d6e3d302727a
+||                   console.log('Resources for asset in trxn: ' +  txn.resources); // Resource {id=org.acme.trading.House#6389}
+||                   console.log('Asset ID from resources array ' +  txn.resources[0].id); // 6389 my field is 'id'
+||           }                         
+||           `});` where `resources[]` is available as an array field in the AddAsset trxn.
 
 ### :information_source:  Query runtime issues / resolutions
 
@@ -741,7 +848,7 @@ The following are a selection of answers, to help understand what you may be enc
 
 | Message encountered | Resolution 
 | :---------------------- | :-----------------------
-
+| Example of testing API endpoint behind REST Authentication using the CLI| Google OAUTH2 (access_token): need to pass the token as a Header, and it shows that the token (copied from a browser for example) is a long alpha-numeric string `curl -X GET --header 'X-Access-Token: htnNqL0zD9NGwtl30y6uBt6uKws6nnWjxDzYbYUyloqAm4pmjW1x4x0f0vknd0z2' 'http://localhost:3000/api/Trader'`
 
 #### :card_index: [back to base camp :camping: ](#top)  
 
@@ -758,6 +865,7 @@ The following are a selection of answers, to help understand what you may be enc
 | Error: No valid responses from any peers  | see below
 | Error: Error: Endpoint read failed |  This is likely to be a connection (.json) config issue -  it needs to be configured for TLS (or non-TLS if that's your setup) communications - depending on your desired configuration.
 | Error: Error: Error trying to ping. Error: Composer runtime (e.g 0.19.x) is not compatible with client (eg. 0.18.x) | You have a mismatch of versions. This could occur using Composer REST server, APIs, App Generator or CLI. Suggest to uninstall the relevant modules eg `composer uninstall -g composer-cli` (also `composer-rest-server`, `generator-hyperledger-composer`, `composer-playground` npm modules that you have installed - then `npm install -g` the same level - check [**release notes**](https://github.com/hyperledger/composer/releases/) for the current release level - ensure you do so as a non-privileged user.
+| Error 404: Response from attempted peer comms was an error: Error: 2 UNKNOWN: error starting container: API error (404): {"message":"network blah_blah not found"}| Resolution: the error is most certainly a configuration issue at the Fabric/Docker level. The error happens at chaincode instantiation and appears to be network and/or docker related - similar problem found here -> https://stackoverflow.com/questions/46775044/error-when-try-to-instantiate-chain-code-on-hyperledger-fabric - you can check CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE in `base/peer-base.yaml` and in `docker-compose.yaml` - check what it is set to eg. - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=${COMPOSE_PROJECT_NAME}_byfn (ie with leading underscore). 
 |Error: Failed to load composer module "composer-connector-undefined" for connection type "undefined"  | This occurs because you have a HLF v1.1 runtime environment and still using a composer runtime of 0.16.x or 017.x - this will not work - please see the 'ready reckoner' table of 'which Composer version works with which Fabric version -> https://github.com/hyperledger/composer/wiki STEPS TO FIX so you can use Composer v0.16.x :  1) unset FABRIC_VERSION variable  2) npm uninstall -g composer-cli 3) npm uninstall -g composer-playground and other modules eg composer-rest-server 4) rm -rf $HOME/.composer 5) from fabric-tools run ./teardownFabric.sh 6) remove any lingering dev-xx business network containers you may previously have deployed (they are separate docker containers eg `docker stop xx` ; `docker rm xxx ` ) 7) npm install -g composer-cli as non-root user 8 ) rm -rf fabric-tools dir && mkdir fabric-tools dir 9) get newer fabric tools zip -> curl -O https://raw.githubusercontent.com/hyperledger/composer-tools/master/packages/fabric-dev-servers/fabric-dev-servers.zip && unzip fabric-dev-servers.zip inside fabric-tools 10) export FABRIC_VERSION=hlfv11 ; and from fabric-tools ./startFabric.sh ; ./createPeerAdminCard.sh 9) npm install -g composer-playground, composer-rest-server etc 10) then try composer runtime install -n mynetworkname -c PeerAdmin@hlfv1 and it should work - then you can proceed to do a `composer network start` command to instantiate a business network, as normal
 |[eventhub_producer] Chat -> ERRO 37f error during Chat, stopping handler: rpc error: code = Canceled desc = context canceled | The problem you are seeing is is likely because the identity you are using to try to install the runtime onto a peer is not authorised to do so. Unfortunately the logs info from Fabric don't indicate this . If you are using the Composer development server then it creates an identity for you called PeerAdmin which you should use to deploy business networks. If you are using your own fabric then you need to look into how to import crypto material when building a peer administrator card and for which it has the PeerAdmin role to do so. Or are you following this tutorial ? https://hyperledger.github.io/composer/tutorials/deploy-to-fabric-single-org
 

@@ -14,12 +14,12 @@ Our [**Tutorials**](https://hyperledger.github.io/composer/tutorials/tutorials.h
 
 | [**ACLs**](#acls) | [**Authorization Errors**](#authorization) | [**Angular**](#angular) | [**Blockchain Recap**](#recap) |[**Business Network Themes**](#biznet) 
 | :---------------------- | :-----------------------| :----------------------- | :-------------------- |:-----------------
-| [**Business Network Cards**](#bizcards) | [**Client APIs Usage**](#clientapis) | [**Cloud/Kubernetes envs**](#varcloud) | [**Composer Install Issues**](#installissues) | [**Composer Network Start Issues**](#startissues) 
-| [**Data Migration**](#migration) | [**Debugging**](#debug) | [**Endorsement Policy**](#endorse) | [**Events**](#events) | [**Event Hub Problems**](#eventhub) 
-| [**Filters**](#filters)  |  [**Identity Issues**](#identity) | [**Historian**](#historian) | [**Modeling**](#model) | [**Miscellaneous Items**](#misccomposer) 
-| [**Multi Org Setup/BYFN**](#multiorg) | [**Node / NVM Issues**](#node-issues) | [**NodeJS App Dev Qs**](#node-app) | [**Passport Strategies**](#passport-strategy) | [**Questions**](#production) 
-| [**Queries & Query Issues**](#queries)  | [**REST APIs**](#restapis)  | [**REST Authentication**](#restauth) | [**Runtime Errors**](#runtime-install)| [**Sample Networks**](#samples) 
-| [**Scripting Tips**](#scripting) |[**Transaction Processors**](#transproc) | [**Upgrading Composer Runtime**](#upgrade) | [**Updating Biz Networks**](#upgradebn) | [**empty**](#samples) 
+| [**Business Network Cards**](#bizcards) | [**Client APIs Usage**](#clientapis) | [**Cloud/Kubernetes envs**](#varcloud) | [**Composer Install Issues**](#installissues) | [**Composer Network Install Issues**](#cinstallissues)  
+| [**Composer Network Start Issues**](#startissues) | [**Data Migration**](#migration) | [**Debugging**](#debug) | [**Endorsement Policy**](#endorse) | [**Events**](#events) 
+| [**Event Hub Problems**](#eventhub) | [**Filters**](#filters)  |  [**Identity Issues**](#identity) | [**Historian**](#historian) | [**Modeling**](#model) 
+| [**Miscellaneous Items**](#misccomposer) | [**Multi Org Setup/BYFN**](#multiorg) | [**Node / NVM Issues**](#node-issues) | [**NodeJS App Dev Qs**](#node-app) | [**Passport Strategies**](#passport-strategy) 
+| [**Questions**](#production) | [**Queries & Query Issues**](#queries)  | [**REST APIs**](#restapis)  | [**REST Authentication**](#restauth) | [**Runtime Errors**](#runtime-install)
+| [**Sample Networks**](#samples) | [**Scripting Tips**](#scripting) |[**Transaction Processors**](#transproc) | [**Upgrading Composer Runtime**](#upgrade) | [**Updating Biz Networks**](#upgradebn)
 
 
 Have Fabric Related issues? (ie when used with Composer Dev Env Setup or Tutorials)
@@ -224,64 +224,89 @@ Firstly, its to do with 'roles' that FABRIC lays down - so **admin** (in the sam
 | :---------------------- | :-----------------------
 | Programmatic Issue, upload and import card to wallet / std HTTP or using react and the axios http library or  | see this snippet https://pastebin.com/ST684NCw or see Caroline Church blog -> https://medium.com/@CazChurchUk/developing-multi-user-application-using-the-hyperledger-composer-rest-server-b3b88e857ccc
 | End to End code example ; issue identity, import card, then export the Card to a .card file |  See example below..
-    createCard(meta: Metadata, businessNetwork: string, profilePath: string){
-    
-    let BusNetworkConnection = new BusinessNetworkConnection();
-    let adminConnection = new AdminConnection();
-    try {
-         (async function createIdentity(meta, busnetwork, profilePath: string){
-          await BusNetworkConnection.connect(meta.adminCard);
-     
-          //issue identity
-          const result = await BusNetworkConnection.issueIdentity(`${meta.participantSignature}#${meta.participantId}`, meta.userName);
-          console.log(`userID = ${result.userID}`);
-          console.log(`userSecret = ${result.userSecret}`);
+    class cardManager {
 
-          //import card
-          const metadataForCard = {version: 1, userName: result.userID, enrollmentSecret: result.userSecret, businessNetwork: businessNetwork};
-          
-            let data: any = fs.readFileSync(path.join(HOME, '/middleware/', profilePath), 'UTF-8');
+
+    async createCard(meta: Metadata, businessNetwork: string, profilePath: string) {
+
+        let BusNetworkConnection = new BusinessNetworkConnection();
+        let adminConnection = new AdminConnection();
+        try {
+            await BusNetworkConnection.connect(meta.adminCard);
+
+            //issue identity
+            const result = await BusNetworkConnection.issueIdentity(`${meta.participantSignature}#${meta.participantId}`, meta.userName);
+            console.log(`userID = ${result.userID}`);
+            console.log(`userSecret = ${result.userSecret}`);
+
+            //import card
+            const metadataForCard: Object = {
+                version: 1,
+                userName: result.userID,
+                enrollmentSecret: result.userSecret,
+                businessNetwork: businessNetwork
+            };
+
+            let data: string = fs.readFileSync(p.join(HOME, 'middleware/', profilePath), 'UTF-8');
             data = JSON.parse(data);
-            
-         
-            const idCardData: any = await new IdCard(metadataForCard, data);
+
+            const idCardData = await new IdCard(metadataForCard, data);
 
             const idCardName: string = await BusinessNetworkCardStore.getDefaultCardName(idCardData);
 
-            const imported = await adminConnection.importCard(idCardName, idCardData);
+            const imported: Promise < boolean > = await adminConnection.importCard(idCardName, idCardData);
+            if (imported) {
+                console.log('card updated');
+            } else {
+                console.log('card added')
+            }
+
+
+            //ping
             await BusNetworkConnection.connect(idCardName);
 
             let pingresult = await BusNetworkConnection.ping();
             console.log(`participant = ${pingresult.participant ? pingresult.participant : '<no participant found>'}`);
+
+            //export card data to file
             let exportedCard: any = await adminConnection.exportCard(idCardName);
-        
-            var credentials = {certificate: exportedCard.credentials.certificate, privateKey: exportedCard.credentials.privateKey};   
-                 
+
+            let credentials = {
+                certificate: exportedCard.credentials.certificate,
+                privateKey: exportedCard.credentials.privateKey
+            };
+
             idCardData.setCredentials(credentials);
-                   
+
             writeCardToFile(idCardName, idCardData);
-                  
-            BusNetworkConnection.disconnect();
-            })(meta, businessNetwork, profilePath)     
-       } catch(error) {
-           console.log(error);
-       }
+
+            await BusNetworkConnection.disconnect();
+            await adminConnection.disconnect();
+
+            return 'success';
+
+
+        } catch (error) {
+            console.log(error);
+            return error;
+        }
 
         async function writeCardToFile(cardFileName: string, card: any) {
-        
-          let cardBuffer: any = await card.toArchive({ type: 'nodebuffer' })
-           
-               // got the id card to write to a buffer
-               let cardFilePath: any = path.resolve(cardFileName);
-              
-                   fs.writeFile(cardFilePath, cardBuffer, (err: any)=>{
-                      if (err) console.log(`Unable to write card file: ${cardFilePath} \n ${err}`)
-                      console.log(`Card ${cardFileName} successfully created`);
-                   });                  
-        }
-              
-    };
 
+            let cardBuffer: Buffer = await card.toArchive({
+                type: 'nodebuffer'
+            })
+
+            // got the id card to write to a buffer
+            let cardFilePath: string = p.join(HOME, 'cardstore/', cardFileName);
+
+            fs.writeFile(cardFilePath, cardBuffer, (err: any) => {
+                if (err) console.log(`Unable to write card file: ${cardFilePath} \n ${err}`)
+                console.log(`Card ${cardFileName} successfully created`);
+            });
+        }
+    };
+    
 | Message/Issue encountered | Resolution 
 | :---------------------- | :-----------------------
 | How to issue identities / create cards via JS APIs: Examples for issuing participants, identities and importing  | We have an issue https://github.com/hyperledger/composer/issues/3088 as the docs are not updated yet with examples. You can refer to the source for composer identity issue to see how it calls BusinessNetworkConnection.issueIdentity (as an admin with authority to issue identities) and creates a business network card from the result:-> https://github.com/hyperledger/composer/blob/master/packages/composer-cli/lib/cmds/identity/lib/issue.js#L46 and also another answer at the bottom here -> https://stackoverflow.com/questions/47393096/nodejs-test-hyperledger-composer-v0-15-fails-with-error-card-not-found-peeradm/47417082#47417082 (albeit with MemoryCardStore being replaced by FileSystemCardStore). This blog is also useful -> https://medium.com/@aniketengg.225/hyperledger-composer-issue-identity-import-card-7e07af378447
@@ -350,9 +375,29 @@ Command failed
 #### :card_index: [back to base camp :camping: ](#top)
 
 
+<a name="cinstallissues"></a>
+
+### :information_source:  Composer Network Install Issues
+
+
+More info on troubleshooting or understanding issues related Composer business network install issues (leading into a subsequent `composer network start` for example) , please see the table below for possible resolutions to the issue / problem you are seeing. 
+
+
+| Message encountered | Resolution 
+| :---------------------- | :----------------------- 
+|Error: REQUEST_TIMEOUT using verdaccio-based 'local' npm registry | see https://github.com/hyperledger/composer/issues/3731#issuecomment-387600862 for resolution of doing a `composer network install` followed by `composer network start` using a specific npm.yaml file (for verdaccio repository) and an npmConfig.txt (ie `npmrcFile=npmConfig.txt`) specifically to pass as a parameter (`-o`) to the `composer network install` command 
+| Error: 2 UNKNOWN: error starting container: Failed to generate platform-specific docker build:  | As part of the Composer Network Start, Fabric tries to build a new chaincode Container which includes `npm install` commands.  This error is usually a Failure to build the container because of an underlying npm issue. 
+| continued .... | Using `docker logs <PEER Container Name>` will show if there are npm errors. Generally npm Warnings can be ignored - but serious errors such as "Error: getaddrinfo EAI_AGAIN nodejs.org:443" need to be resolved. The most common cause of the error is a corporate proxy or firewall preventing access outbound. More specifically, the need to include an npmrcFile as part of the `composer network install` sequence. These npm errors need to be fixed before a chaincode container can be successfully built.  You may recognise the problem and be immediately able to fix, but if not it is advisable to create a temporary container based on the same image that Composer uses.  Having a dedicated test container will be a fast way to identify and solve your local npm issues.  The following commands may help:
+|continued .... | Create a test container: `docker run -it --name npmtest --network composer_default  --entrypoint "/bin/sh" hyperledger/composer-cli` | When the container starts, install 'a' (a small npm package)    `npm install -g a`
+| continued .... | Errors with npm here need to be understood and resolved in this test container, then the same resolutions in an npmrc file should be passed to the Composer command. 
+| continued ... | Once resolved: (if you are running the Development Fabric with a single peer) you can now just re-run the `composer network install` command adding the npmrcFile option e.g.  `composer network install -c PeerAdmin@hlfv1 -a digitalproperty-network.bna -o npmrcFile=/tmp/npmrcFile`
+|continued ... | If you are running a more complex fabric, you may need to re-run the `composer network install` command.
+| Error: 2 UNKNOWN: chaincode error (status: 500, message: Authorization for INSTALL has been denied (error-Failed verifying that proposal's creator satisfies local MSP principal during channelless check policy with policy [Admins]: [This identity is not an admin])) | A business Network Card is being used with an ID that does not have Admin rights. For Composer, this can mean a 'PeerAdmin' card was NOT used, or the Card was created with incorrect certificates.
+
+#### :card_index: [back to base camp :camping: ](#top)
+
+
 <a name="startissues"></a>
-
-
 
 ### :information_source:  Composer Network Start Issues
 
@@ -370,21 +415,13 @@ More info on troubleshooting or understanding issues related Composer business n
 | Error: 2 UNKNOWN: transaction returned with failure: ReferenceError: alert is not defined  | There is an error in the transaction logic JS script is this example a function called 'alert'. Transaction processing function cannot have 'include' or 'requires', nor include JS code that relies on Browser functionality will also fail.
 | Error: 2 UNKNOWN: chaincode error (status: 500, message: cannot get package for chaincode (test-network:0.0.2))  | The network start has failed for the particular network name and version specified.  This can occur because a composer network install has not been run, but it is more likely that there is a mismatch. Run the `composer archive list` command to see the **exact name** and **version** used in the .bna file. Remember that the version number must be changed and saved in the package.json. This error can also occur with the `composer network upgrade` command.
 ||
-| Error: REQUEST_TIMEOUT fail to compile BN container using the std npm registry  | As part of the Composer Network Start, Fabric tries to build a new chaincode Container which includes `npm install` commands. A **`REQUEST_TIMEOUT`** can occur with the failure to build the Chaincode containers for all peers within the default timeout period of 5 mins through lack of system resources or poor network connections.This can be a problem for the Multi-Org tutorial, but also for single peer installs. If you are using our simple Hyperledger Composer development server environment from composer-tools github repo, then you can add the following to the peer definition to see if it addresses the problem:
-| continued .... | CORE_CHAINCODE_STARTUPTIMEOUT=1200s in the file ~/fabric-tools/fabric-scripts/hlfv11/composer/docker-compose.yml eg, the above is a snippet from the peer definition. You would then have to do a `docker-compose stop` - then `docker-compose start` from that directory location to take effect. If you are using a more complex Fabric you will need to find the docker-compose files used to configure your Fabric and modify those. After modifying a docker-compose file it will be necessary to run the `startFabric.sh` script and re-run the `composer network install` command, and then finally the `composer network start` command.
-| continued .... | these Stack Overflow links may also shed further light https://stackoverflow.com/questions/49751259/error-in-starting-hyperledger-fabric-network-with-hyperledger-composer/49758354#49758354 and https://stackoverflow.com/questions/49290943/v0-18-1-error-cant-start-network and sample entry looks like this in the YAML file is shown [here](https://github.com/hyperledger/composer/issues/3731#issuecomment-380096851)
-|Error: REQUEST_TIMEOUT using verdaccio-based 'local' npm registry | see https://github.com/hyperledger/composer/issues/3731#issuecomment-387600862 for resolution of doing a `composer network install` followed by `composer network start` using a specific npm.yaml file (for verdaccio repository) and an npmConfig.txt (ie `npmrcFile=npmConfig.txt`) to pass to the `composer network install` command 
-| Error: 2 UNKNOWN: error starting container: Failed to generate platform-specific docker build:  | As part of the Composer Network Start, Fabric tries to build a new chaincode Container which includes `npm install` commands.  This error is usually a Failure to build the container because of an underlying npm issue. 
-| continued .... | Using `docker logs <PEER Container Name>` will show if there are npm errors. Generally npm Warnings can be ignored - but serious errors such as "Error: getaddrinfo EAI_AGAIN nodejs.org:443" need to be resolved. The most common cause of the error is a corporate proxy or firewall preventing access outbound. More specifically, the need to include an npmrcFile as part of the `composer network start` sequence. These npm errors need to be fixed before a chaincode container can be successfully built.  You may recognise the problem and be immediately able to fix, but if not it is advisable to create a temporary container based on the same image that Composer uses.  Having a dedicated test container will be a fast way to identify and solve your local npm issues.  The following commands may help:
-|continued .... | Create a test container: `docker run -it --name npmtest --network composer_default  --entrypoint "/bin/sh" hyperledger/composer-cli` | When the container starts, install 'a' (a small npm package)    `npm install -g a`
-| continued .... | Errors with npm here need to be understood and resolved in this test container, then the same resolutions in an npmrc file should be passed to the Composer command. 
-| continued ... | Once resolved: (if you are running the Development Fabric with a single peer) you can now just re-run the `composer network start` command adding the npmrcFile option e.g.  `composer network install -c PeerAdmin@hlfv1 -a digitalproperty-network.bna -o npmrcFile=/tmp/npmrcFile`
-|continued ... | If you are running a more complex fabric, you may need to re-run the `composer network install` command.
-| Error: 2 UNKNOWN: chaincode error (status: 500, message: Authorization for INSTALL has been denied (error-Failed verifying that proposal's creator satisfies local MSP principal during channelless check policy with policy [Admins]: [This identity is not an admin])) | A business Network Card is being used with an ID that does not have Admin rights. For Composer, this can mean a 'PeerAdmin' card was NOT used, or the Card was created with incorrect certificates.
-
-
+| Error: REQUEST_TIMEOUT fail to compile BN container using the standard npm registry  | As part of the Composer Network Start, Fabric tries to build a new chaincode Container which includes `npm install` commands. A **`REQUEST_TIMEOUT`** can occur with the failure to build the Chaincode containers for all peers within the default timeout period of 5 mins through lack of system resources or poor network connections.This can be a problem for the Multi-Org tutorial, but also for single peer installs. If you are using our simple Hyperledger Composer development server environment from composer-tools github repo, then you can add the following to the peer definition to see if it addresses the problem:
+| continued .... | CORE_CHAINCODE_STARTUPTIMEOUT=1200s in the file ~/fabric-tools/fabric-scripts/hlfv11/composer/docker-compose.yml eg, the above is a snippet from the peer definition. You would then have to do a `docker-compose stop` - then `docker-compose start` from that directory location to take effect. If you are using a more complex Fabric you will need to find the docker-compose files used to configure your Fabric and modify those. After modifying a docker-compose file it will be necessary to run the `startFabric.sh` script and re-run the `composer network install` command, and then finally the `composer network start` command. 
+| continued .... | In addition to CORE_CHAINCODE_STARTUPTIMEOUT change above - you MUST ALSO UPDATE the timeout values to match (ie CORE_CHAINCODE_STARTUPTIMEOUT),  in the  `connection.json` file for the card(s) that performs the `composer network start` command (eg. PeerAdmin card in $HOME/.composer). You will see 4 timeouts (3 for a Peer and 1 for the Order) in the 'client' section,  under the stanza "connection". By default, these are set to 300 seconds - Increase the value to 1200 for each. Do note that CORE_CHAINCODE_STARTUPTIMEOUT must have the 'trailing s' , whereas these 4 timeouts defined above - don't have this.
+|continued .... | these Stack Overflow links may also shed further light https://stackoverflow.com/questions/49751259/error-in-starting-hyperledger-fabric-network-with-hyperledger-composer/49758354#49758354 and https://stackoverflow.com/questions/49290943/v0-18-1-error-cant-start-network and sample entry looks like this in the YAML file is shown [here](https://github.com/hyperledger/composer/issues/3731#issuecomment-380096851)
 
 #### :card_index: [back to base camp :camping: ](#top)
+
 
 
 <a name="migration"></a>
